@@ -536,7 +536,7 @@ public class OrderService {
         return order;
     }
 
-    // Kiểm tra chuyển đổi hợp lệ hay không
+    // Kiểm tra chuyển đổi status hợp lệ hay không
     private boolean isValidTransition(OrderStatus current, OrderStatus next) {
         return switch (current) {
             case CONFIRMED -> Set.of(OrderStatus.DELIVERING).contains(next);
@@ -546,12 +546,12 @@ public class OrderService {
     }
 
 
+    //============USER ======================
+    //====================================================================================//
     // Lấy đơn hàng mới nhất của user
     public OrderResponse getLatestOrder(String token) {
 
         Long userIdToken = jwtUtil.extractUserId(token);
-        // TODO: Implement JWT token validation and user extraction
-        // For now, we'll get the latest order from the database
         log.info("Getting latest order for token: {}", token);
         
         Order latestOrder = orderRepository.findTopByOrderByCreatedAtDesc()
@@ -576,7 +576,7 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    // ========== ADMIN FUNCTIONS ==========
+    // ========== ADMIN FUNCTIONS ================================================================
 
     // Lấy tất cả đơn hàng chờ xác nhận (PENDING_CONFIRMATION) - cho Admin
     public List<OrderResponse> getPendingConfirmationOrders() {
