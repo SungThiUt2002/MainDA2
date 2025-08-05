@@ -1,0 +1,19 @@
+#
+#services:
+#  cart-service:
+#    build: .
+#    container_name: cart-service
+#    ports:
+#      - "8081:8081"
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#    depends_on:
+#      - postgres
+#      - redis
+#    networks:
+#      - cart-network
+#    restart: unless-stopped
+#
+#networks:
+#  cart-network:
+#    external: true

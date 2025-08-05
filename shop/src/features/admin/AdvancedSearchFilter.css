@@ -1,0 +1,355 @@
+/* Advanced Search Filter - Compact Design */
+.advanced-search-filter {
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 0;
+  transition: all 0.3s ease;
+  background: #fff;
+  border: none;
+}
+
+.advanced-search-filter:hover {
+  box-shadow: none;
+}
+
+/* Active Filters Badge */
+.active-filters {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem; /* Giảm margin */
+}
+
+.filter-badge {
+  background: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid rgba(108, 117, 125, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.filter-badge:hover {
+  background: rgba(108, 117, 125, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Advanced Filters - Compact */
+.advanced-filters {
+  padding: 0.25rem; /* Giảm padding */
+  background: #fff;
+  animation: slideDown 0.3s ease;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Giảm minmax để fit nhiều hơn */
+  gap: 0.25rem;
+  margin-bottom: 0;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  background: #fff;
+  padding: 0.125rem; /* Giảm padding */
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.filter-group:hover {
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.625rem; /* Giảm font size */
+  margin-bottom: 0;
+  font-weight: 500;
+  color: #495057;
+}
+
+.label-icon {
+  font-size: 0.75rem; /* Giảm font size */
+  width: 1rem; /* Giảm kích thước */
+  height: 1rem;
+  background: #6c757d;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-select, .filter-input {
+  padding: 0.25rem 0.375rem; /* Giảm padding */
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.625rem; /* Giảm font size */
+  transition: all 0.2s ease;
+  font-weight: 400;
+  color: #495057;
+  background: #fff;
+}
+
+.filter-select:focus, .filter-input:focus {
+  outline: none;
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+}
+
+.filter-select:hover, .filter-input:hover {
+  border-color: #adb5bd;
+}
+
+/* Price Range - Compact */
+.price-range {
+  display: flex;
+  gap: 0.125rem; /* Giảm gap */
+  align-items: center;
+  background: #f8f9fa;
+  padding: 0.125rem; /* Giảm padding */
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.price-input {
+  flex: 1;
+  padding: 0.125rem 0.25rem; /* Giảm padding */
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  font-size: 0.625rem; /* Giảm font size */
+  transition: all 0.2s ease;
+  font-weight: 400;
+  color: #495057;
+  background: #fff;
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: #28a745;
+  box-shadow: 0 0 0 1px rgba(40, 167, 69, 0.25);
+}
+
+.price-separator {
+  font-weight: 500;
+  font-size: 0.625rem; /* Giảm font size */
+  color: #6c757d;
+  padding: 0 0.125rem; /* Giảm padding */
+}
+
+.price-unit {
+  font-size: 0.5rem; /* Giảm font size */
+  font-weight: 500;
+  background: #e9ecef;
+  padding: 0.0625rem 0.125rem; /* Giảm padding */
+  border-radius: 2px;
+  color: #495057;
+}
+
+/* Filter Actions - Compact */
+.filter-actions {
+  display: flex;
+  gap: 0.25rem; /* Giảm gap */
+  padding-top: 0.125rem; /* Giảm padding */
+  border-top: 1px solid #dee2e6;
+  margin-top: 0;
+}
+
+.btn-apply, .btn-reset {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem; /* Giảm gap */
+  padding: 0.25rem 0.5rem; /* Giảm padding */
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.625rem; /* Giảm font size */
+  transition: all 0.2s ease;
+  min-width: 60px; /* Giảm min-width */
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+}
+
+.btn-apply {
+  background: #28a745;
+  color: white;
+  border: none;
+  box-shadow: 0 1px 3px rgba(40, 167, 69, 0.3);
+}
+
+.btn-apply:hover {
+  background: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.4);
+}
+
+.btn-apply:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(40, 167, 69, 0.3);
+}
+
+.btn-reset {
+  background: white;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-reset:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive Design - Compact */
+@media (max-width: 768px) {
+  .active-filters {
+    margin-bottom: 0.5rem;
+  }
+  
+  .advanced-filters {
+    padding: 0.25rem;
+  }
+  
+  .filters-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Giảm minmax cho mobile */
+    gap: 0.25rem;
+  }
+  
+  .filter-group {
+    padding: 0.125rem;
+  }
+  
+  .filter-label {
+    font-size: 0.5625rem; /* Giảm font size */
+  }
+  
+  .filter-select, .filter-input {
+    font-size: 0.5625rem; /* Giảm font size */
+    padding: 0.125rem 0.25rem;
+  }
+  
+  .price-range {
+    padding: 0.0625rem; /* Giảm padding */
+  }
+  
+  .price-input {
+    font-size: 0.5625rem; /* Giảm font size */
+    padding: 0.0625rem 0.125rem;
+  }
+  
+  .filter-actions {
+    flex-direction: row; /* Giữ nguyên hàng ngang */
+    gap: 0.25rem;
+  }
+  
+  .btn-apply, .btn-reset {
+    width: auto; /* Không full width */
+    justify-content: center;
+    padding: 0.375rem;
+    font-size: 0.6875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .active-filters {
+    margin-bottom: 0.25rem;
+  }
+  
+  .advanced-filters {
+    padding: 0.125rem;
+  }
+  
+  .filters-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Giảm minmax cho mobile nhỏ */
+  }
+  
+  .filter-group {
+    padding: 0.0625rem;
+  }
+  
+  .filter-label {
+    font-size: 0.5rem; /* Giảm font size */
+  }
+  
+  .label-icon {
+    width: 0.875rem; /* Giảm kích thước */
+    height: 0.875rem;
+    font-size: 0.625rem;
+  }
+  
+  .filter-select, .filter-input {
+    font-size: 0.5rem; /* Giảm font size */
+    padding: 0.0625rem 0.125rem;
+  }
+  
+  .price-input {
+    font-size: 0.5rem; /* Giảm font size */
+    padding: 0.0625rem;
+  }
+  
+  .price-separator {
+    font-size: 0.5625rem; /* Giảm font size */
+  }
+  
+  .price-unit {
+    font-size: 0.4375rem; /* Giảm font size */
+    padding: 0.03125rem 0.0625rem;
+  }
+  
+  .btn-apply, .btn-reset {
+    padding: 0.25rem;
+    font-size: 0.625rem;
+  }
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+} 

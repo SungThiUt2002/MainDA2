@@ -1,0 +1,74 @@
+.role-permission-manager {
+  padding: 2rem;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin: 2rem auto;
+  max-width: 900px;
+}
+
+.tab-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.tab-header button {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #f5f5f5;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.tab-header button.active {
+  background: #f53d2d;
+  color: #fff;
+}
+
+.role-table, .permission-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.role-table th, .role-table td,
+.permission-table th, .permission-table td {
+  border: 1px solid #eee;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.role-table th, .permission-table th {
+  background: #fafafa;
+}
+
+.role-form, .permission-form {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.role-form input, .permission-form input {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.role-form button, .permission-form button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  background: #f53d2d;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.error-message {
+  color: red;
+  margin-bottom: 1rem;
+}

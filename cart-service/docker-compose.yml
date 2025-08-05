@@ -1,0 +1,152 @@
+#version: "3.9"
+#
+#services:
+#  # --- PostgreSQL ---
+#  postgres:
+#    image: postgres:15
+#    container_name: cart-postgres
+#    environment:
+#      POSTGRES_DB: cart_service_db
+#      POSTGRES_USER: cart_user
+#      POSTGRES_PASSWORD: cart_password
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+#    networks:
+#      - cart-network
+#
+#  # --- Redis ---
+#  redis:
+#    image: redis:7-alpine
+#    container_name: cart-redis
+#    ports:
+#      - "6379:6379"
+#    volumes:
+#      - redis_data:/data
+#    networks:
+#      - cart-network
+#
+#  # --- PgAdmin ---
+#  pgadmin:
+#    image: dpage/pgadmin4:latest
+#    container_name: cart-pgadmin
+#    environment:
+#      PGADMIN_DEFAULT_EMAIL: sungthiut2002@gmail.com
+#      PGADMIN_DEFAULT_PASSWORD: stu123123
+#    ports:
+#      - "5050:80"
+#    depends_on:
+#      - postgres
+#    networks:
+#      - cart-network
+#
+#  # --- Application ---
+#  cart-service:
+#    build: .
+#    container_name: cart-service
+#    ports:
+#      - "8082:8081"
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#    depends_on:
+#      - postgres
+#      - redis
+#    networks:
+#      - cart-network
+#    restart: unless-stopped
+#
+#  # --- Sonar ---
+#  sonarqube:
+#    image: sonarqube:10.2-community
+#    container_name: cart-sonarqube
+#    ports:
+#      - "9000:9000"
+#    environment:
+#      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: true
+#    volumes:
+#      - sonarqube_data:/opt/sonarqube/data
+#      - sonarqube_extensions:/opt/sonarqube/extensions
+#      - sonarqube_logs:/opt/sonarqube/logs
+#    networks:
+#      - cart-network
+#
+#  # --- OWASP ZAP ---
+#  zap:
+#    image: ghcr.io/zaproxy/zaproxy:stable
+#    container_name: cart-zap
+#    ports:
+#      - "8080:8080"
+#    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true -config api.key=12345
+#    networks:
+#      - cart-network
+#
+#  # --- Trivy ---
+#  trivy:
+#    image: aquasec/trivy:latest
+#    container_name: cart-trivy
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - ./:/app
+#    working_dir: /app
+#    networks:
+#      - cart-network
+#
+#  # --- Prometheus ---
+#  prometheus:
+#    image: prom/prometheus:latest
+#    container_name: cart-prometheus
+#    ports:
+#      - "9090:9090"
+#    volumes:
+#      - ./prometheus:/etc/prometheus
+#      - prometheus_data:/prometheus
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#      - '--storage.tsdb.path=/prometheus'
+#    networks:
+#      - cart-network
+#
+#  # --- Grafana ---
+#  grafana:
+#    image: grafana/grafana:latest
+#    container_name: cart-grafana
+#    ports:
+#      - "3000:3000"
+#    environment:
+#      - GF_SECURITY_ADMIN_PASSWORD=admin
+#    volumes:
+#      - grafana_data:/var/lib/grafana
+#    networks:
+#      - cart-network
+#
+#volumes:
+#  postgres_data:
+#  redis_data:
+#  sonarqube_data:
+#  sonarqube_extensions:
+#  sonarqube_logs:
+#  prometheus_data:
+#  grafana_data:
+#
+#networks:
+#  cart-network:
+#    external: true
+
+
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7.2
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:

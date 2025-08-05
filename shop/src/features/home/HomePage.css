@@ -1,0 +1,609 @@
+/* HomePage.css */
+.homepage {
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header styles are now imported from Header.css */
+
+/* Button styles are now imported from Header.css */
+
+.btn-view {
+  background: #007bff;
+  color: white;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.btn-view:hover {
+  background: #0056b3;
+}
+
+/* Fixed Search Section - Cố định ngay bên dưới header */
+.fixed-search-section {
+  position: fixed;
+  top: 80px; /* Chiều cao của header */
+  left: 0;
+  right: 0;
+  background: #fff; /* Thay đổi thành màu trắng */
+  color: #333; /* Thay đổi màu chữ thành đen */
+  z-index: 999;
+  padding: 0; /* Loại bỏ padding để liền kề hoàn toàn */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Shadow nhẹ */
+  border-bottom: 1px solid #e0e0e0; /* Border nhẹ */
+}
+
+.fixed-search-section .search-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.fixed-search-section .search-header h2 {
+  color: white;
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+}
+
+.fixed-search-section .search-header p {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* Hero Section - Điều chỉnh để phù hợp với search section cố định */
+.hero {
+  padding: 200px 0 80px; /* Tăng padding-top để tránh bị che bởi search section */
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+}
+
+.hero-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.highlight {
+  color: #ffd700;
+}
+
+.hero-subtitle {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.hero-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-placeholder {
+  font-size: 8rem;
+  opacity: 0.8;
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Section Titles */
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 3rem;
+  color: #333;
+  position: relative;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: #007bff;
+}
+
+/* Categories Section */
+.categories {
+  padding: 80px 0;
+  background: #f8f9fa;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+}
+
+.category-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.category-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.category-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+}
+
+.category-description {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Featured Products Section */
+.featured-products {
+  padding: 80px 0;
+  background: white;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.product-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.product-image {
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.05);
+}
+
+.product-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  background: #f8f9fa;
+  color: #6c757d;
+}
+
+.product-info {
+  padding: 1.5rem;
+}
+
+.product-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.product-description {
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.product-price {
+  margin-bottom: 1rem;
+}
+
+.price {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.view-more {
+  text-align: center;
+}
+
+/* About Section */
+.about {
+  padding: 80px 0;
+  background: #f8f9fa;
+}
+
+.about-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.about-text p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #555;
+  margin-bottom: 2rem;
+}
+
+.features {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.feature-icon {
+  font-size: 2rem;
+  min-width: 50px;
+}
+
+.feature h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.feature p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.about-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.about-placeholder {
+  font-size: 8rem;
+  opacity: 0.6;
+}
+
+/* Footer */
+.footer {
+  background: #333;
+  color: white;
+  padding: 60px 0 20px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer-section h3,
+.footer-section h4 {
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.footer-section p {
+  color: #ccc;
+  line-height: 1.6;
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-section ul li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-section ul li a {
+  color: #ccc;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-section ul li a:hover {
+  color: #007bff;
+}
+
+.social-links {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.social-link {
+  display: inline-block;
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.social-link:hover {
+  transform: scale(1.2);
+}
+
+.footer-bottom {
+  border-top: 1px solid #555;
+  padding-top: 2rem;
+  text-align: center;
+  color: #ccc;
+}
+
+/* Search Results Info */
+.search-results-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  backdrop-filter: blur(10px);
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.results-count {
+  font-weight: 500;
+  color: rgb(24, 22, 22);
+}
+
+.btn-clear-search {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgb(31, 18, 18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.btn-clear-search:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  /* Header responsive styles are now imported from Header.css */
+  
+  .fixed-search-section {
+    top: 120px; /* Tăng chiều cao cho mobile */
+    padding: 1.5rem 0;
+  }
+  
+  .fixed-search-section .search-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .fixed-search-section .search-header p {
+    font-size: 0.9rem;
+  }
+  
+  .hero {
+    padding: 180px 0 80px; /* Điều chỉnh padding cho mobile */
+  }
+  
+  .hero-container {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-buttons {
+    justify-content: center;
+  }
+  
+  .about-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .categories-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .search-results-info {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .fixed-search-section {
+    top: 140px; /* Tăng thêm cho mobile nhỏ */
+    padding: 1rem 0;
+  }
+  
+  .fixed-search-section .search-header h2 {
+    font-size: 1.3rem;
+  }
+  
+  .fixed-search-section .search-header p {
+    font-size: 0.8rem;
+  }
+  
+  .hero {
+    padding: 160px 0 80px;
+  }
+  
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+  
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Button responsive styles are now imported from Header.css */
+}
+
+/* User Account Styles */
+.user-account {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-account {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.btn-account:hover {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-logout {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+
+/* Responsive for user account */
+@media (max-width: 768px) {
+  .account-dropdown {
+    right: -50px;
+    min-width: 180px;
+  }
+  
+  .btn-account {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .account-dropdown {
+    right: -100px;
+    min-width: 160px;
+  }
+} 

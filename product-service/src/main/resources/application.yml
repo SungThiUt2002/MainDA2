@@ -1,0 +1,71 @@
+
+server:
+  port: 9001
+
+spring:
+  application:
+    name: product-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/product_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  kafka:
+    bootstrap-servers: localhost:19092,localhost:19093,localhost:19094
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: true
+
+    consumer:
+      group-id: product-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"
+#            type:
+#              mapping:
+#                com.stu.common_dto.event.AccountEvent.TokenBlacklistEvent: com.stu.common_dto.event.AccountEvent.TokenBlacklistEvent
+
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+
+jwt:
+  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+logging:
+  level:
+    com.stu.product_service.security: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.kafka: DEBUG
+    com.stu.product_service.event: DEBUG
+
+
+
+inventory:
+  service:
+    url: http://localhost:9007 # Thay đổi thành URL thực tế của inventory-service nếu cần

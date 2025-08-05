@@ -1,0 +1,102 @@
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #fdfbfb, #ebedee);
+}
+
+.register-form {
+  width: 400px;
+  padding: 2.5rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.6s ease;
+}
+
+.register-form h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.register-form input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: #f9f9f9;
+  transition: all 0.3s;
+}
+
+.register-form input:focus {
+  outline: none;
+  border-color: #3498db;
+  background-color: #fff;
+}
+
+.register-form button {
+  width: 100%;
+  padding: 12px;
+  background-color: #27ae60;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.register-form button:hover {
+  background-color: #1e8449;
+}
+
+.register-form button:disabled {
+  background-color: #aab7b8;
+  cursor: not-allowed;
+}
+
+.success-msg {
+  color: green;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.error-msg {
+  color: red;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.signup-link {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.signup-link a {
+  color: #2980b9;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,236 @@
+/* 📁 src/features/products/ProductDetailPage.css */
+
+/* Định dạng chung cho phần chi tiết sản phẩm */
+.product-detail-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  padding-top: 80px; /* Thêm padding để tránh bị che bởi header */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+/* Cấu trúc breadcrumb (đường dẫn trang) */
+.breadcrumb {
+  font-size: 14px;
+  margin-bottom: 0.5rem;
+  color: #888;
+}
+
+/* Cấu trúc nút quay lại */
+.back-button {
+  background-color: #f0f0f0;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 1.5rem;
+  width: fit-content;
+}
+
+/* Cấu trúc phần hiển thị chi tiết sản phẩm */
+.product-body {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1000px;
+}
+
+/* Phần hiển thị ảnh sản phẩm */
+.image-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.main-image {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.product-main-img {
+  width: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.thumbnail-row {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.thumbnail-list-horizontal {
+  display: flex;
+  gap: 10px;
+  min-width: max-content;
+}
+
+.thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border 0.2s;
+  flex-shrink: 0;
+}
+
+.thumbnail:hover,
+.thumbnail.active {
+  border: 2px solid #ee4d2d;
+}
+
+/* Phần thông tin sản phẩm (Tên, giá, mô tả) */
+.info-section {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.product-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.product-price {
+  color: #ee4d2d;
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.product-description {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #ddd;
+}
+
+.product-desc-text {
+  margin-top: 0.5rem;
+  line-height: 1.6;
+  color: #444;
+}
+
+/* Nút thêm vào giỏ hàng */
+.add-to-cart {
+  background-color: #ee4d2d;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  margin-top: 1.5rem;
+  cursor: pointer;
+}
+
+/* Cập nhật cho phần Header (Thanh điều hướng) */
+.top-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000; /* Đảm bảo nó luôn ở trên các phần tử khác */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(to right, #f53d2d, #ff7337);
+  padding: 1rem 2rem;
+  color: white;
+  height: 60px;
+  width: 100%;
+}
+
+/* Phần logo của navbar */
+.navbar-left .logo {
+  font-size: 1.7rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Phần tìm kiếm và giỏ hàng */
+.navbar-center {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  max-width: 600px;
+  margin: 0 2rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 4px 0 0 4px;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+}
+
+.search-btn {
+  padding: 0.6rem 1rem;
+  background: white;
+  color: #f53d2d;
+  border: none;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.navbar-right {
+  position: relative;
+}
+
+.cart-icon {
+  position: relative;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: white;
+  color: #f53d2d;
+  font-weight: bold;
+  font-size: 0.75rem;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 2px solid #f53d2d;
+}
+
+/* ========== MOBILE ========== */
+@media (max-width: 768px) {
+  /* Điều chỉnh lại header cho responsive */
+  .top-navbar {
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .product-body {
+    grid-template-columns: 1fr;
+  }
+
+  .thumbnail-row {
+    overflow-x: auto;
+  }
+
+  .thumbnail-list-horizontal {
+    flex-direction: row;
+  }
+}

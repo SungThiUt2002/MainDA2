@@ -1,0 +1,528 @@
+/* HomePage Search Filter - Đơn giản và phù hợp cho người dùng cuối */
+.homepage-search-filter {
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 0;
+  transition: all 0.3s ease;
+  background: #fff;
+  border: none;
+  /* padding: 0.75rem 0; Thêm padding nội bộ */
+}
+
+.homepage-search-filter:hover {
+  box-shadow: none;
+}
+
+/* Active Filters Badge */
+.active-filters {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.filter-badge {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+  padding: 0.375rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.filter-badge:hover {
+  background: rgba(40, 167, 69, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Search Filters - Layout cải thiện */
+.search-filters {
+  /* padding: 0.5rem; */
+  background: #fff;
+  animation: slideDown 0.3s ease;
+}
+
+/* Primary Filters - Luôn hiển thị */
+.primary-filters {
+  margin-bottom: 0.5rem;
+}
+
+/* Single Row Layout cho Primary Filters */
+.filters-grid-single-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto auto auto; /* Category, Keyword, Search button, Reset button, Advanced button */
+  gap: 0.5rem; /* Giảm gap để vừa vặn hơn */
+  align-items: end;
+}
+
+.primary-filters .filters-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto; /* Keyword lớn hơn, category nhỏ hơn, actions tự động */
+  gap: 0.75rem;
+  align-items: end;
+}
+
+/* Category group - Ở đầu */
+.category-group {
+  grid-column: 1;
+}
+
+/* Keyword group - Ở giữa */
+.keyword-group {
+  grid-column: 2;
+}
+
+.keyword-input {
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+/* Filter Actions Primary */
+.filter-actions-primary {
+  display: flex;
+  flex-direction: row;
+  gap: 0.375rem;
+  justify-content: flex-end;
+  align-self: end;
+  min-width: fit-content; /* Đảm bảo button không bị co lại */
+}
+
+/* Advanced Filters Button */
+.advanced-filters-button {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+}
+
+.toggle-advanced-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  color: #6c757d;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem 0.5rem; /* Giảm padding để vừa vặn hơn */
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toggle-advanced-btn:hover {
+  background: #e9ecef;
+  color: #495057;
+  border-color: #adb5bd;
+}
+
+.toggle-icon {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.toggle-count {
+  background: #e9ecef;
+  color: #495057;
+  padding: 0.125rem 0.375rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.advanced-filters-content {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  animation: slideDown 0.3s ease;
+}
+
+.advanced-filters-content .filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+/* General Filters Grid */
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Tăng minmax để fit 5 mục */
+  gap: 0.5rem;
+  margin-bottom: 0;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; /* Giảm gap để label và input gần nhau hơn */
+  background: #fff;
+  padding: 0.25rem;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.filter-group:hover {
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  margin-bottom: 0;
+  font-weight: 600;
+  color: #495057;
+  white-space: nowrap; /* Đảm bảo label không bị xuống dòng */
+}
+
+.label-icon {
+  font-size: 0.875rem; /* Giảm font size */
+  width: 1.25rem; /* Giảm kích thước */
+  height: 1.25rem; /* Giảm kích thước */
+  background: #28a745; /* Thay đổi thành màu xanh */
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-select, .filter-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  font-weight: 400;
+  color: #495057;
+  background: #fff;
+}
+
+.filter-select:focus, .filter-input:focus {
+  outline: none;
+  border-color: #28a745;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.25);
+}
+
+.filter-select:hover, .filter-input:hover {
+  border-color: #adb5bd;
+}
+
+/* Price Range - Compact */
+.price-range {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 0.25rem;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.price-input {
+  flex: 1;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  font-weight: 400;
+  color: #495057;
+  background: #fff;
+}
+
+.price-input:focus {
+  outline: none;
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+}
+
+.price-separator {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #6c757d;
+  padding: 0 0.25rem;
+}
+
+.price-unit {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e9ecef;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  color: #495057;
+}
+
+/* Filter Actions - Inline với các mục tìm kiếm */
+.filter-actions-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  justify-content: flex-end;
+  align-self: end;
+  min-height: 100%;
+}
+
+.btn-apply, .btn-reset {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  min-width: 70px; /* Giảm min-width để vừa vặn hơn */
+  text-transform: none;
+  letter-spacing: normal;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-apply {
+  background: #28a745;
+  color: white;
+  border: none;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.btn-apply:hover {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+}
+
+.btn-apply:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.btn-reset {
+  background: white;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-reset:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive Design - Cải thiện */
+@media (max-width: 768px) {
+  .active-filters {
+    margin-bottom: 0.5rem;
+  }
+  
+  .search-filters {
+    padding: 0.375rem;
+  }
+  
+  /* Primary filters responsive */
+  .primary-filters .filters-grid {
+    grid-template-columns: 1fr; /* Stack vertically on mobile */
+    gap: 0.5rem;
+  }
+  
+  .filters-grid-single-row {
+    grid-template-columns: 1fr 1fr; /* 2 cột trên mobile */
+    gap: 0.5rem;
+  }
+  
+  .filter-actions-primary {
+    flex-direction: row;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  
+  .advanced-filters-button {
+    justify-content: center;
+  }
+  
+  /* Advanced filters responsive */
+  .advanced-filters-content .filters-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .filters-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Tăng minmax cho mobile */
+    gap: 0.375rem;
+  }
+  
+  .filter-group {
+    padding: 0.25rem;
+  }
+  
+  .filter-label {
+    font-size: 0.8125rem;
+  }
+  
+  .label-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.875rem;
+  }
+  
+  .filter-select, .filter-input {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.5rem;
+  }
+  
+  .keyword-input {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .price-range {
+    padding: 0.25rem;
+  }
+  
+  .price-input {
+    font-size: 0.8125rem;
+    padding: 0.25rem 0.375rem;
+  }
+  
+  .price-separator {
+    font-size: 0.8125rem;
+  }
+  
+  .price-unit {
+    font-size: 0.6875rem;
+    padding: 0.1875rem 0.375rem;
+  }
+  
+  .btn-apply, .btn-reset {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  
+  .toggle-advanced-btn {
+    font-size: 0.8125rem;
+    padding: 0.375rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .active-filters {
+    margin-bottom: 0.375rem;
+  }
+  
+  .search-filters {
+    padding: 0.25rem;
+  }
+  
+  .filters-grid-single-row {
+    grid-template-columns: 1fr; /* Stack vertically on mobile nhỏ */
+    gap: 0.375rem;
+  }
+  
+  .advanced-filters-button {
+    justify-content: center;
+  }
+  
+  .filters-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Tăng minmax cho mobile nhỏ */
+    gap: 0.25rem;
+  }
+  
+  .filter-group {
+    padding: 0.1875rem;
+  }
+  
+  .filter-label {
+    font-size: 0.75rem;
+  }
+  
+  .label-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    font-size: 0.8125rem;
+  }
+  
+  .filter-select, .filter-input {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.375rem;
+  }
+  
+  .keyword-input {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.5rem;
+  }
+  
+  .price-input {
+    font-size: 0.75rem;
+    padding: 0.1875rem 0.25rem;
+  }
+  
+  .price-separator {
+    font-size: 0.75rem;
+  }
+  
+  .price-unit {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+  }
+  
+  .btn-apply, .btn-reset {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .toggle-advanced-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem;
+  }
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+} 
