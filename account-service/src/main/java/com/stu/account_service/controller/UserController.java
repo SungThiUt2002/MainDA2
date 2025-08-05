@@ -36,6 +36,15 @@ public class UserController {
                 .build();
     }
 
+    @PutMapping("/update")
+    public ApiResponse<UserResponse> updateUser(@RequestBody @Valid UpdateUserRequest request) {
+        return ApiResponse.<UserResponse>builder()
+                .data(userService.updateUser(request))
+                .message("Cập nhật thông tin thành công")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     // Cấp thêm role cho úuer
     @PostMapping("/admin/addRoleToUser")
     public ApiResponse<UserResponse> addRoleToUser(@RequestBody AddRoleToUserRequest request){
@@ -116,5 +125,21 @@ public class UserController {
         userService.deleteUserById(userId);
         log.info("Deleted user by Id {}",userId);
         return "Deleted user successful";
+    }
+
+    // Logout endpoint
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        log.info("User {} logged out successfully", username);
+        
+        // Có thể thêm logic để blacklist token hoặc invalidate session ở đây
+        // Ví dụ: lưu token vào blacklist, clear session, etc.
+        
+        return ApiResponse.<Void>builder()
+                .message("Đăng xuất thành công")
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 }

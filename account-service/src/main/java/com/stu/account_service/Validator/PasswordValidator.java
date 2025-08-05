@@ -13,7 +13,7 @@ public class PasswordValidator implements ConstraintValidator<ValidPassword, Str
                 password.matches(".*[a-z].*") &&     // ít nhất 1 chữ thường
                 password.matches(".*[A-Z].*") &&     // ít nhất 1 chữ hoa
                 password.matches(".*\\d.*") &&       // ít nhất 1 số
-                password.matches(".*[@$!%*?&].*");    // ít nhất 1 ký tự đặc biệt
+                password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*");    // ít nhất 1 ký tự đặc biệt
     }
 }
 

@@ -29,10 +29,21 @@ export const changePassword = async (changePasswordData) => {
 // Cập nhật thông tin cá nhân
 export const updateProfile = async (profileData) => {
   try {
-    const response = await axiosInstance.put('/users/profile', profileData);
+    const response = await axiosInstance.put('/users/update', profileData);
     return response.data;
   } catch (error) {
     console.error('❌ Lỗi cập nhật thông tin:', error);
+    throw error;
+  }
+};
+
+// Đăng xuất
+export const logout = async () => {
+  try {
+    const response = await axiosInstance.post('/users/logout');
+    return response.data;
+  } catch (error) {
+    console.error('❌ Lỗi đăng xuất:', error);
     throw error;
   }
 };

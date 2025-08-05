@@ -20,7 +20,7 @@ import com.stu.order_service.entity.OrderStatusHistory;
 import com.stu.order_service.enums.OrderStatus;
 import com.stu.order_service.event.producers.CreateOrderProducer;
 import com.stu.order_service.event.producers.InventoryOrderProducer;
-import com.stu.order_service.event.producers.ShipingProducer;
+
 import com.stu.order_service.exception.AppException;
 import com.stu.order_service.exception.ErrorCode;
 import com.stu.order_service.mapper.OrderItemMapper;
@@ -48,7 +48,6 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final InventoryClient inventoryClient; // Giả lập client tích hợp Inventory Service// Giả lập client tích hợp Product Service
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
-    private final ShipingProducer shipingProducer;
     private  final AddressClient addressClient;
     private final InventoryOrderProducer inventoryProducer;
     private final CreateOrderProducer createOrderProducer;
@@ -424,9 +423,16 @@ public class OrderService {
 
     // URER
     @Transactional
-    public void cancelOrder(String orderId) {
+    public void cancelOrder(String orderId, String token) {
+        Long userIdToken = jwtUtil.extractUserId(token);
+        
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        // Kiểm tra quyền sở hữu - chỉ cho phép user hủy đơn hàng của chính mình
+        if (!order.getUserId().equals(userIdToken)) {
+            throw new AppException(ErrorCode.PERMISSION_DENIED, "Bạn không có quyền hủy đơn hàng này");
+        }
 
         if (order.getStatus() == OrderStatus.DELIVERING || order.getStatus() == OrderStatus.DELIVERY_SUCCESSFUL) {
             throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
@@ -483,13 +489,11 @@ public class OrderService {
         OrderStatus currentStatus = order.getStatus();
         OrderStatus newStatus = request.getNewStatus();
 
-        if (currentStatus == OrderStatus.DELIVERY_SUCCESSFUL ||
-                currentStatus == OrderStatus.CANCELLED ||
-                currentStatus == OrderStatus.RETURNED) {
+        if (currentStatus == OrderStatus.CANCELLED || currentStatus == OrderStatus.RETURNED) {
             throw new AppException(ErrorCode.ORDER_ALREADY_FINALIZED);
         }
 
-        if (currentStatus != OrderStatus.CONFIRMED && currentStatus != OrderStatus.DELIVERING) {
+        if (currentStatus != OrderStatus.CONFIRMED && currentStatus != OrderStatus.DELIVERING && currentStatus != OrderStatus.DELIVERY_SUCCESSFUL) {
             throw new AppException(ErrorCode.ORDER_NOT_CONFIRM);
         }
 
@@ -541,6 +545,7 @@ public class OrderService {
         return switch (current) {
             case CONFIRMED -> Set.of(OrderStatus.DELIVERING).contains(next);
             case DELIVERING -> Set.of(OrderStatus.DELIVERY_SUCCESSFUL, OrderStatus.RETURNED).contains(next);
+            case DELIVERY_SUCCESSFUL -> Set.of(OrderStatus.RETURNED).contains(next);
             default -> false;
         };
     }
@@ -552,14 +557,12 @@ public class OrderService {
     public OrderResponse getLatestOrder(String token) {
 
         Long userIdToken = jwtUtil.extractUserId(token);
-        log.info("Getting latest order for token: {}", token);
+        log.info("Getting latest order for user ID: {}", userIdToken);
         
-        Order latestOrder = orderRepository.findTopByOrderByCreatedAtDesc()
+        Order latestOrder = orderRepository.findTopByUserIdOrderByCreatedAtDesc(userIdToken)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND, "Không tìm thấy đơn hàng"));
 
-        if (!latestOrder.getUserId().equals(userIdToken)){
-            throw new AppException(ErrorCode.PERMISSION_DENIED);
-        }
+        log.info("Found latest order: ID={}, Status={} for user {}", latestOrder.getId(), latestOrder.getStatus(), userIdToken);
         return orderMapper.toOrderResponse(latestOrder);
     }
 
@@ -571,6 +574,19 @@ public class OrderService {
         List<Order> userOrders = orderRepository.findByUserIdOrderByCreatedAtDesc(userIdToken);
 
         log.info("Found {} orders for user {}", userOrders.size(), userIdToken);
+        return userOrders.stream()
+                .map(orderMapper::toOrderResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Lấy đơn hàng của user theo trạng thái
+    public List<OrderResponse> getUserOrdersByStatus(String token, OrderStatus status) {
+        Long userIdToken = jwtUtil.extractUserId(token);
+        log.info("Getting orders for user ID: {} with status: {}", userIdToken, status);
+
+        List<Order> userOrders = orderRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userIdToken, status);
+
+        log.info("Found {} orders for user {} with status {}", userOrders.size(), userIdToken, status);
         return userOrders.stream()
                 .map(orderMapper::toOrderResponse)
                 .collect(Collectors.toList());

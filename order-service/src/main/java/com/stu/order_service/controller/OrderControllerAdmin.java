@@ -78,4 +78,11 @@ public class OrderControllerAdmin {
         OrderResponse response = orderMapper.toOrderResponse(updatedOrder);
         return ResponseEntity.ok(response);
     }
+
+    // 8. Lấy danh sách trạng thái đơn hàng
+    @GetMapping("/list/statuses")
+    public ResponseEntity<OrderStatus[]> getOrderStatuses() {
+        OrderStatus[] statuses = OrderStatus.values();
+        return ResponseEntity.ok(statuses);
+    }
 } 

@@ -27,7 +27,7 @@
         </processorPath>
         <module name="inventory-service" />
       </profile>
-      <profile name="Annotation profile for payment-service" enabled="true">
+      <profile name="Annotation profile for order-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -37,7 +37,6 @@
           <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct/1.5.5.Final/mapstruct-1.5.5.Final.jar" />
         </processorPath>
         <module name="account-service" />
-        <module name="payment-service" />
         <module name="order-service" />
       </profile>
       <profile name="Annotation profile for product-service" enabled="true">
@@ -54,6 +53,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="payment-service" target="21" />
       <module name="profile-service" target="21" />
       <module name="shipping-service" target="21" />
     </bytecodeTargetLevel>

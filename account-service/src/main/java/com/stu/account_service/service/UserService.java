@@ -5,6 +5,7 @@ import com.stu.account_service.dto.request.AddRoleToUserRequest;
 import com.stu.account_service.dto.request.ChangePasswordRequest;
 import com.stu.account_service.dto.request.CreateUserWithRolesRequest;
 import com.stu.account_service.dto.request.RegisterRequest;
+import com.stu.account_service.dto.request.UpdateUserRequest;
 import com.stu.account_service.dto.response.UserResponse;
 import com.stu.account_service.entity.Role;
 import com.stu.account_service.entity.User;
@@ -294,6 +295,41 @@ public class UserService implements UserDetailsService {
         
         log.info("All authorities: {}", user.getAuthorities());
         log.info("===============================");
+    }
+
+    // Cập nhật thông tin user
+    public UserResponse updateUser(UpdateUserRequest request) {
+        // Lấy thông tin user hiện tại từ SecurityContext
+        var context = SecurityContextHolder.getContext();
+        String username = context.getAuthentication().getName();
+        
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        
+        // Cập nhật thông tin nếu có
+        if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
+            user.setFirstName(request.getFirstName().trim());
+        }
+        
+        if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
+            user.setLastName(request.getLastName().trim());
+        }
+        
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
+            // Kiểm tra format số điện thoại
+            if (!request.getPhoneNumber().matches("^[+]?[0-9]{10,15}$")) {
+                throw new AppException(ErrorCode.VALIDATION_ERROR);
+            }
+            user.setPhoneNumber(request.getPhoneNumber().trim());
+        }
+        
+        // Cập nhật thời gian sửa đổi
+        user.setUpdatedAt(LocalDateTime.now());
+        
+        User updatedUser = userRepository.save(user);
+        log.info("Updated user information for user: {}", username);
+        
+        return convertToUserResponse(updatedUser);
     }
 
     // delete

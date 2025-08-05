@@ -21,6 +21,10 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     @Query("SELECT o FROM Order o WHERE o.userId = :userId ORDER BY o.createdAt DESC")
     List<Order> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
     
+    // Lấy đơn hàng của user theo trạng thái
+    @Query("SELECT o FROM Order o WHERE o.userId = :userId AND o.status = :status ORDER BY o.createdAt DESC")
+    List<Order> findByUserIdAndStatusOrderByCreatedAtDesc(@Param("userId") Long userId, @Param("status") com.stu.order_service.enums.OrderStatus status);
+    
     // ========== ADMIN QUERIES ==========
     
     // Lấy tất cả đơn hàng theo trạng thái

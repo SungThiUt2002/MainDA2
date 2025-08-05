@@ -4,7 +4,9 @@ import {
   getPendingConfirmationOrders, 
   getOrdersByStatus, 
   getOrderById, 
-  adminConfirmOrder 
+  adminConfirmOrder,
+  updateShippingStatus,
+  getOrderStatuses
 } from "../../api/orderApi";
 import "./OrderManager.css";
 
@@ -16,6 +18,14 @@ const OrderManager = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
   const [confirmingOrder, setConfirmingOrder] = useState(null);
+  const [showStatusUpdateModal, setShowStatusUpdateModal] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(null);
+  const [statusUpdateData, setStatusUpdateData] = useState({
+    newStatus: "",
+    description: ""
+  });
+  const [orderStatuses, setOrderStatuses] = useState([]);
+  const [loadingStatuses, setLoadingStatuses] = useState(false);
 
   const token = localStorage.getItem("accessToken");
 
@@ -40,6 +50,9 @@ const OrderManager = () => {
           break;
         case "cancelled":
           response = await getOrdersByStatus("CANCELLED", token);
+          break;
+        case "returned":
+          response = await getOrdersByStatus("RETURNED", token);
           break;
         default:
           response = await getAllOrders(token);
@@ -92,6 +105,66 @@ const OrderManager = () => {
     }
   };
 
+  // Handle update shipping status
+  const handleUpdateShippingStatus = async (orderId) => {
+    if (!statusUpdateData.newStatus) {
+      alert("Vui lòng chọn trạng thái mới!");
+      return;
+    }
+
+    setUpdatingStatus(orderId);
+    try {
+      await updateShippingStatus(orderId, statusUpdateData, token);
+      alert("✅ Cập nhật trạng thái thành công!");
+      setShowStatusUpdateModal(false);
+      setStatusUpdateData({ newStatus: "", description: "" });
+      fetchOrders(selectedFilter); // Refresh list
+    } catch (err) {
+      console.error("❌ Lỗi cập nhật trạng thái:", err);
+      alert("❌ Cập nhật trạng thái thất bại!");
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  // Handle open status update modal
+  const handleOpenStatusUpdateModal = (order) => {
+    setSelectedOrder(order);
+    setShowStatusUpdateModal(true);
+  };
+
+  // Load order statuses from backend
+  const loadOrderStatuses = useCallback(async () => {
+    setLoadingStatuses(true);
+    try {
+      const statuses = await getOrderStatuses(token);
+      setOrderStatuses(statuses);
+    } catch (err) {
+      console.error("❌ Lỗi load danh sách trạng thái:", err);
+    } finally {
+      setLoadingStatuses(false);
+    }
+  }, [token]);
+
+  // Get valid next statuses based on current status
+  const getValidNextStatuses = (currentStatus) => {
+    switch (currentStatus) {
+      case "CONFIRMED":
+        return ["DELIVERING"];
+      case "DELIVERING":
+        return ["DELIVERY_SUCCESSFUL", "RETURNED"]; // Có thể trả hàng trong quá trình giao
+      case "DELIVERY_SUCCESSFUL":
+        return ["RETURNED"]; // Có thể trả hàng sau khi giao thành công
+      default:
+        return [];
+    }
+  };
+
+  // Load statuses when component mounts
+  useEffect(() => {
+    loadOrderStatuses();
+  }, [loadOrderStatuses]);
+
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -116,10 +189,28 @@ const OrderManager = () => {
       DELIVERY_SUCCESSFUL: { label: "Giao thành công", className: "status-delivered" },
       CANCELLED: { label: "Đã hủy", className: "status-cancelled" },
       PAYMENT_FAILED: { label: "Thanh toán thất bại", className: "status-failed" },
+      RETURNED: { label: "Đã trả lại", className: "status-returned" },
     };
     
     const config = statusConfig[status] || { label: status, className: "status-unknown" };
     return <span className={`status-badge ${config.className}`}>{config.label}</span>;
+  };
+
+  // Get status label
+  const getStatusLabel = (status) => {
+    const statusConfig = {
+      CREATED: "Đã tạo",
+      PENDING_CONFIRMATION: "Chờ xác nhận",
+      PENDING_PAYMENT: "Chờ thanh toán",
+      CONFIRMED: "Đã xác nhận",
+      DELIVERING: "Đang giao",
+      DELIVERY_SUCCESSFUL: "Giao thành công",
+      CANCELLED: "Đã hủy",
+      PAYMENT_FAILED: "Thanh toán thất bại",
+      RETURNED: "Đã trả lại",
+    };
+    
+    return statusConfig[status] || status;
   };
 
   // Get payment method label
@@ -172,6 +263,12 @@ const OrderManager = () => {
             onClick={() => handleFilterChange("cancelled")}
           >
             Đã hủy
+          </button>
+          <button
+            className={`filter-btn ${selectedFilter === "returned" ? "active" : ""}`}
+            onClick={() => handleFilterChange("returned")}
+          >
+            Đã trả lại
           </button>
         </div>
       </div>
@@ -254,7 +351,16 @@ const OrderManager = () => {
                             {confirmingOrder === order.id ? "⏳ Đang xác nhận..." : "✅ Xác nhận"}
                           </button>
                         )}
-                      </td>
+                        {(order.status === "CONFIRMED" || order.status === "DELIVERING" || order.status === "DELIVERY_SUCCESSFUL") && 
+                         getValidNextStatuses(order.status).length > 0 && (
+                          <button
+                            className="action-btn update-status-btn"
+                            onClick={() => handleOpenStatusUpdateModal(order)}
+                          >
+                            📦 Cập nhật trạng thái
+                          </button>
+                        )}
+                       </td>
                     </tr>
                   ))}
                 </tbody>
@@ -376,6 +482,106 @@ const OrderManager = () => {
                 onClick={() => setShowOrderDetail(false)}
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Update Modal */}
+      {showStatusUpdateModal && selectedOrder && (
+        <div className="modal-overlay">
+          <div className="status-update-modal">
+            <div className="modal-header">
+              <h3>Cập nhật trạng thái đơn hàng #{selectedOrder.id}</h3>
+              <button
+                className="close-btn"
+                onClick={() => {
+                  setShowStatusUpdateModal(false);
+                  setStatusUpdateData({ newStatus: "", description: "" });
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="status-update-content">
+              <div className="current-status">
+                <h4>Trạng thái hiện tại: {getStatusBadge(selectedOrder.status)}</h4>
+                <p>Đơn hàng #{selectedOrder.id}</p>
+              </div>
+              
+              {selectedOrder.status === "DELIVERY_SUCCESSFUL" ? (
+                <div className="return-notice">
+                  <p><strong>⚠️ Lưu ý:</strong> Đơn hàng đã giao thành công. Chỉ chuyển sang "Trả lại" khi khách hàng yêu cầu trả lại hàng hoặc phát hiện lỗi sau khi nhận.</p>
+                </div>
+              ) : selectedOrder.status === "DELIVERING" ? (
+                <div className="return-notice">
+                  <p><strong>⚠️ Lưu ý:</strong> Đơn hàng đang trong quá trình giao. Có thể chuyển sang "Trả lại" nếu khách hàng từ chối nhận hàng hoặc không tìm thấy khách hàng.</p>
+                </div>
+              ) : null}
+              
+              <div className="status-form">
+                <div className="form-group">
+                  <label>Trạng thái mới:</label>
+                  <select
+                    value={statusUpdateData.newStatus}
+                    onChange={(e) => setStatusUpdateData({
+                      ...statusUpdateData,
+                      newStatus: e.target.value
+                    })}
+                    disabled={loadingStatuses}
+                  >
+                    <option value="">Chọn trạng thái mới</option>
+                    {getValidNextStatuses(selectedOrder.status).map((status) => (
+                      <option key={status} value={status}>
+                        {getStatusLabel(status)}
+                      </option>
+                    ))}
+                  </select>
+                  {loadingStatuses && (
+                    <small style={{ color: '#6c757d', fontStyle: 'italic' }}>
+                      Đang tải danh sách trạng thái...
+                    </small>
+                  )}
+                  {!loadingStatuses && getValidNextStatuses(selectedOrder.status).length === 0 && (
+                    <small style={{ color: '#dc3545', fontStyle: 'italic' }}>
+                      Không có trạng thái hợp lệ để chuyển đổi từ trạng thái hiện tại
+                    </small>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Ghi chú (tùy chọn):</label>
+                  <textarea
+                    value={statusUpdateData.description}
+                    onChange={(e) => setStatusUpdateData({
+                      ...statusUpdateData,
+                      description: e.target.value
+                    })}
+                    placeholder="Nhập ghi chú về trạng thái..."
+                    rows="3"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="update-btn"
+                onClick={() => handleUpdateShippingStatus(selectedOrder.id)}
+                disabled={updatingStatus === selectedOrder.id || !statusUpdateData.newStatus}
+              >
+                {updatingStatus === selectedOrder.id ? "⏳ Đang cập nhật..." : "✅ Cập nhật trạng thái"}
+              </button>
+              <button
+                className="close-btn secondary"
+                onClick={() => {
+                  setShowStatusUpdateModal(false);
+                  setStatusUpdateData({ newStatus: "", description: "" });
+                }}
+              >
+                Hủy
               </button>
             </div>
           </div>

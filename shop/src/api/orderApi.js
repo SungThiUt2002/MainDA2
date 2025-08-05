@@ -47,6 +47,17 @@ export const getUserOrders = async (token) => {
   }
 };
 
+// ✅ Lấy đơn hàng của user theo trạng thái
+export const getUserOrdersByStatus = async (status, token) => {
+  try {
+    const res = await axiosOrder.get(`/history/status/${status}`);
+    return res.data;
+  } catch (err) {
+    console.error("❌ Lỗi API getUserOrdersByStatus:", err?.response?.data || err.message);
+    throw err;
+  }
+};
+
 // ========== ADMIN ORDER APIs ==========
 
 // Lấy tất cả đơn hàng chờ xác nhận (PENDING_CONFIRMATION)
@@ -232,6 +243,32 @@ export const cancelOrder = async (orderId, token) => {
     await axiosOrder.put(`/${orderId}/cancel`, {});
   } catch (err) {
     console.error("❌ Lỗi API cancelOrder:", err?.response?.data || err.message);
+    throw err;
+  }
+};
+
+// ✅ Cập nhật trạng thái vận chuyển (Admin)
+export const updateShippingStatus = async (orderId, statusData, token) => {
+  try {
+    const res = await axiosOrderAdmin.put(`/${orderId}/shipping-status`, statusData, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  } catch (err) {
+    console.error("❌ Lỗi API updateShippingStatus:", err?.response?.data || err.message);
+    throw err;
+  }
+};
+
+// ✅ Lấy danh sách trạng thái đơn hàng
+export const getOrderStatuses = async (token) => {
+  try {
+    const res = await axiosOrderAdmin.get("/list/statuses", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data;
+  } catch (err) {
+    console.error("❌ Lỗi API getOrderStatuses:", err?.response?.data || err.message);
     throw err;
   }
 }; 

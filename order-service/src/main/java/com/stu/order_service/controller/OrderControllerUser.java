@@ -4,6 +4,7 @@ import com.stu.common_dto.enums.PaymentMethod;
 import com.stu.order_service.dto.request.UpdateOrderInfoRequest;
 import com.stu.order_service.dto.response.OrderResponse;
 import com.stu.order_service.entity.Order;
+import com.stu.order_service.enums.OrderStatus;
 import com.stu.order_service.mapper.OrderMapper;
 import com.stu.order_service.service.OrderService;
 import jakarta.validation.Valid;
@@ -45,8 +46,11 @@ public class OrderControllerUser {
 
     // 3. Hủy đơn hàng
     @PutMapping("/{orderId}/cancel")
-    public ResponseEntity<Void> cancelOrder(@PathVariable String orderId){
-        orderService.cancelOrder(orderId);
+    public ResponseEntity<Void> cancelOrder(
+            @PathVariable String orderId,
+            @RequestHeader("Authorization") String authorizationHeader){
+        String token = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7) : authorizationHeader;
+        orderService.cancelOrder(orderId, token);
         return ResponseEntity.ok().build();
     }
 
@@ -64,6 +68,22 @@ public class OrderControllerUser {
         String token = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7) : authorizationHeader;
         var response = orderService.getUserOrders(token);
         return ResponseEntity.ok(response);
+    }
+
+    // 6. Lấy đơn hàng của user theo trạng thái
+    @GetMapping("/history/status/{status}")
+    public ResponseEntity<List<OrderResponse>> getUserOrdersByStatus(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @PathVariable("status") String status) {
+        String token = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7) : authorizationHeader;
+        
+        try {
+            OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
+            var response = orderService.getUserOrdersByStatus(token, orderStatus);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // 5. Lấy danh sách các phương thức thanh toán
