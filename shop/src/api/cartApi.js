@@ -47,8 +47,9 @@
 //   }
 // };
 // api/cartApi.js
-import { createAxiosInstance } from "./axiosInstance";
+import { createAxiosInstance, createPublicAxiosInstance } from "./axiosInstance";
 
+// ✅ Instance với authentication (cho user đã đăng nhập)
 const axiosCart = createAxiosInstance({
   baseURL: "http://localhost:9008/api/carts",
   headers: {
@@ -56,14 +57,20 @@ const axiosCart = createAxiosInstance({
   },
 });
 
-// ✅ Gọi API: Thêm sản phẩm vào giỏ
-export const addToCart = async (data, token) => {
-  try {
-    if (!token) {
-      throw new Error("Token không được cung cấp");
-    }
+// ✅ Instance không yêu cầu authentication (cho guest users)
+const axiosCartPublic = createPublicAxiosInstance({
+  baseURL: "http://localhost:9008/api/carts",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
-    const res = await axiosCart.post("/item", data);
+// ✅ Gọi API: Thêm sản phẩm vào giỏ (hỗ trợ cả có và không có token)
+export const addToCart = async (data, token = null) => {
+  try {
+    // ✅ Sử dụng instance phù hợp tùy vào có token hay không
+    const axiosInstance = token ? axiosCart : axiosCartPublic;
+    const res = await axiosInstance.post("/item", data);
     return res.data;
   } catch (err) {
     console.error("❌ Lỗi API addToCart:", err?.response?.data || err.message);
@@ -71,10 +78,12 @@ export const addToCart = async (data, token) => {
   }
 };
 
-// ✅ Gọi API: Lấy danh sách item trong giỏ
-export const fetchCartItems = async (token) => {
+// ✅ Gọi API: Lấy danh sách item trong giỏ (hỗ trợ cả có và không có token)
+export const fetchCartItems = async (token = null) => {
   try {
-    const res = await axiosCart.get("/items");
+    // ✅ Sử dụng instance phù hợp tùy vào có token hay không
+    const axiosInstance = token ? axiosCart : axiosCartPublic;
+    const res = await axiosInstance.get("/items");
     return res.data;
   } catch (err) {
     console.error("❌ Lỗi API fetchCartItems:", err?.response?.data || err.message);

@@ -32,7 +32,10 @@ export function createAxiosInstance(config = {}) {
     async (config) => {
       let accessToken = localStorage.getItem("accessToken");
 
-      if (isTokenExpired(accessToken)) {
+      // ✅ Chỉ thêm Authorization header nếu có token và không hết hạn
+      if (accessToken && !isTokenExpired(accessToken)) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      } else if (accessToken && isTokenExpired(accessToken)) {
         try {
           const refreshToken = localStorage.getItem("refreshToken");
           const res = await axios.post("http://localhost:9003/auth/refresh", {
@@ -44,15 +47,15 @@ export function createAxiosInstance(config = {}) {
 
           localStorage.setItem("accessToken", accessToken);
           localStorage.setItem("refreshToken", newRefreshToken);
+          
+          if (accessToken) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+          }
         } catch (err) {
           console.error("🔐 Refresh thất bại trong request interceptor:", err);
-          logoutAndRedirect(); // 🔧 Thêm gọi logout
-          return Promise.reject(err);
+          // ❌ Không redirect tự động nữa, chỉ log lỗi
+          console.warn("⚠️ Tiếp tục request mà không có authentication");
         }
-      }
-
-      if (accessToken) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
       }
 
       return config;
@@ -68,8 +71,9 @@ export function createAxiosInstance(config = {}) {
       if (error.response?.status === 401 && !originalRequest._retry) {
         const refreshToken = localStorage.getItem("refreshToken");
 
+        // ✅ Nếu không có refresh token, chỉ log lỗi thay vì redirect
         if (!refreshToken) {
-          logoutAndRedirect();
+          console.warn("⚠️ Không có refresh token, request tiếp tục mà không authentication");
           return Promise.reject(error);
         }
 
@@ -104,7 +108,8 @@ export function createAxiosInstance(config = {}) {
         } catch (refreshError) {
           console.error("❌ Refresh token hết hạn:", refreshError);
           processQueue(refreshError, null);
-          logoutAndRedirect(); // 🔧 Gọi logout tại đây
+          // ❌ Không tự động logout nữa
+          console.warn("⚠️ Authentication thất bại, một số tính năng có thể không hoạt động");
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;
@@ -115,6 +120,14 @@ export function createAxiosInstance(config = {}) {
     }
   );
 
+  return instance;
+}
+
+// ✅ Tạo instance axios không yêu cầu authentication
+export function createPublicAxiosInstance(config = {}) {
+  const instance = axios.create(config);
+  
+  // Không thêm bất kỳ interceptor authentication nào
   return instance;
 }
 
