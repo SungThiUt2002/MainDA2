@@ -35,11 +35,15 @@ function App() {
             {/* <Route path="/admin/users" element={<UserManagement />} /> */}
           </Route>
 
+          {/* Các route này giờ có thể truy cập mà không cần đăng nhập */}
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+
+          {/* Chỉ giữ lại route Admin cần đăng nhập */}
           <Route element={<PrivateRoute allowedRoles={["USER"]} />}>
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/orders" element={<OrderHistoryPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/orders" element={<OrderHistoryPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+            {/* Có thể thêm các route khác cần đăng nhập ở đây */}
           </Route>
 
           <Route path="/products/:id" element={<ProductDetailPage />} />

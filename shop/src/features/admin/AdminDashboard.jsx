@@ -425,7 +425,7 @@ const AdminDashboard = () => {
                   {/* Không có sửa user, chỉ xóa */}
                   <button
                     onClick={() => handleDeleteUser(u.id)}
-                    style={{ color: "red" }}
+                    style={{ color: "#fff" }}
                   >
                     Xóa
                   </button>
