@@ -136,7 +136,7 @@
 
 .advanced-filters-content {
   margin-top: 0.75rem;
-  padding: 0.15rem;
+  padding: 0.75rem;
   background: #f8f9fa;
   border-radius: 8px;
   animation: slideDown 0.3s ease;
@@ -332,90 +332,90 @@
   .active-filters {
     margin-bottom: 0.5rem;
   }
-
+  
   .search-filters {
     padding: 0.375rem;
   }
-
+  
   /* Primary filters responsive */
   .primary-filters .filters-grid {
     grid-template-columns: 1fr; /* Stack vertically on mobile */
     gap: 0.5rem;
   }
-
+  
   .filters-grid-single-row {
     grid-template-columns: 1fr 1fr; /* 2 cột trên mobile */
     gap: 0.5rem;
   }
-
+  
   .filter-actions-primary {
     flex-direction: row;
     gap: 0.5rem;
     justify-content: center;
   }
-
+  
   .advanced-filters-button {
     justify-content: center;
   }
-
+  
   /* Advanced filters responsive */
   .advanced-filters-content .filters-grid {
     grid-template-columns: 1fr;
     gap: 0.5rem;
   }
-
+  
   .filters-grid {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Tăng minmax cho mobile */
     gap: 0.375rem;
   }
-
+  
   .filter-group {
     padding: 0.25rem;
   }
-
+  
   .filter-label {
     font-size: 0.8125rem;
   }
-
+  
   .label-icon {
     width: 1.25rem;
     height: 1.25rem;
     font-size: 0.875rem;
   }
-
+  
   .filter-select, .filter-input {
     font-size: 0.8125rem;
     padding: 0.375rem 0.5rem;
   }
-
+  
   .keyword-input {
     font-size: 0.875rem;
     padding: 0.5rem 0.75rem;
   }
-
+  
   .price-range {
     padding: 0.25rem;
   }
-
+  
   .price-input {
     font-size: 0.8125rem;
     padding: 0.25rem 0.375rem;
   }
-
+  
   .price-separator {
     font-size: 0.8125rem;
   }
-
+  
   .price-unit {
     font-size: 0.6875rem;
     padding: 0.1875rem 0.375rem;
   }
-
+  
   .btn-apply, .btn-reset {
     padding: 0.5rem 0.75rem;
     font-size: 0.8125rem;
   }
-
+  
   .toggle-advanced-btn {
     font-size: 0.8125rem;
     padding: 0.375rem;
@@ -426,68 +426,68 @@
   .active-filters {
     margin-bottom: 0.375rem;
   }
-
+  
   .search-filters {
     padding: 0.25rem;
   }
-
+  
   .filters-grid-single-row {
     grid-template-columns: 1fr; /* Stack vertically on mobile nhỏ */
     gap: 0.375rem;
   }
-
+  
   .advanced-filters-button {
     justify-content: center;
   }
-
+  
   .filters-grid {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Tăng minmax cho mobile nhỏ */
     gap: 0.25rem;
   }
-
+  
   .filter-group {
     padding: 0.1875rem;
   }
-
+  
   .filter-label {
     font-size: 0.75rem;
   }
-
+  
   .label-icon {
     width: 1.125rem;
     height: 1.125rem;
     font-size: 0.8125rem;
   }
-
+  
   .filter-select, .filter-input {
     font-size: 0.75rem;
     padding: 0.25rem 0.375rem;
   }
-
+  
   .keyword-input {
     font-size: 0.8125rem;
     padding: 0.375rem 0.5rem;
   }
-
+  
   .price-input {
     font-size: 0.75rem;
     padding: 0.1875rem 0.25rem;
   }
-
+  
   .price-separator {
     font-size: 0.75rem;
   }
-
+  
   .price-unit {
     font-size: 0.625rem;
     padding: 0.125rem 0.25rem;
   }
-
+  
   .btn-apply, .btn-reset {
     padding: 0.375rem 0.5rem;
     font-size: 0.75rem;
   }
-
+  
   .toggle-advanced-btn {
     font-size: 0.75rem;
     padding: 0.25rem;
@@ -525,4 +525,4 @@
   100% {
     transform: scale(1);
   }
-}
+} 

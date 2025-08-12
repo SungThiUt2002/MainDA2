@@ -57,13 +57,6 @@ spring:
             trusted:
               packages: "*"
 
-# Eureka configuration
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-    enabled: true
-
 # Circuit Breaker Configuration
 resilience4j:
   circuitbreaker:
