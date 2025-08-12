@@ -178,7 +178,7 @@ const RolePermissionManager = () => {
                   </td>
                   <td>
                     <button onClick={() => handleEditRole(role)}>Sửa</button>
-                    <button onClick={() => handleDeleteRole(role.id)} style={{ color: "red" }}>Xóa</button>
+                    <button onClick={() => handleDeleteRole(role.id)} style={{ color: "#fff" }}>Xóa</button>
                   </td>
                 </tr>
               ))}

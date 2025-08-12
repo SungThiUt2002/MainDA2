@@ -5,7 +5,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  padding-top: 0px; /* Thêm padding để tránh bị che bởi header */
+  padding-top: 80px; /* Thêm padding để tránh bị che bởi header */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #fff;
   border-radius: 12px;
@@ -147,7 +147,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(to right, #442df5, #ff7337);
+  background: linear-gradient(to right, #f53d2d, #ff7337);
   padding: 1rem 2rem;
   color: white;
   height: 60px;
