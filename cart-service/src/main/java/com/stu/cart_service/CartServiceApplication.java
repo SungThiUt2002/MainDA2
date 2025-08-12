@@ -8,6 +8,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 @SpringBootApplication
 @EnableFeignClients
 @EnableKafka
+
 public class CartServiceApplication {
 
 	public static void main(String[] args) {

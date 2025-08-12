@@ -1,0 +1,9 @@
+## Cấu hình cho common-dto module
+## File này được tạo để tránh lỗi khi cart-service tải cấu hình common-dto
+#
+#spring:
+#  application:
+#    name: common-dto
+#
+## File này thực tế không được sử dụng trực tiếp
+## nhưng cần có để tránh lỗi khi config server tìm kiếm cấu hình cho common-dto

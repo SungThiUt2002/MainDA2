@@ -1,0 +1,55 @@
+server:
+  port: 9003
+
+spring:
+  application:
+    name: account-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/account_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    # url: jdbc:mysql://localhost:3306/account_da2?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  kafka:
+    bootstrap-servers: localhost:19092,localhost:19093,localhost:19094
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: true
+#      acks: -1
+#      retries: 3
+#      properties:
+#        enable.idempotence: true
+#        max.in.flight.requests.per.connection: 5
+
+#jwt:
+#  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+#  expiration: 180000 #3p
+#  refresh-expiration: 360000 #6p
+  #  86400000  # 24 giờ → refreshToken
+  # expiration: 86400000
+  # refresh-expiration: 604800000
+
+logging:
+  level:
+    com.stu.account_service: DEBUG
+
+security:
+  login:
+    # cleanup-cron: 0 0 0 * * *
+    cleanup-cron: 0 0/3 * * * *
+app:
+  cart-service:
+    url: http://localhost:9008 # hoặc tên service trong docker/k8s
