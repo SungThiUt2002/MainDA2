@@ -1,9 +1,9 @@
 server:
   port: 9008
-
+#
 spring:
-  application:
-    name: cart-service
+#  application:
+#    name: cart-service
 
   datasource:
     url: jdbc:mysql://localhost:3306/cart_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
@@ -43,6 +43,12 @@ spring:
             trusted:
               packages: "*"
 
+# Eureka configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    enabled: true
 
 
 # Dịch vụ gọi lẫn nhau (api)
@@ -76,6 +82,6 @@ logging:
     com.stu.cart_service: INFO  # đúng package phải là 'cart_service' nếu bạn dùng dấu gạch dưới trong package
     com.stu.cart_service.service: DEBUG
     org.springframework.security: DEBUG
-
+#
 #jwt:
 #  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970

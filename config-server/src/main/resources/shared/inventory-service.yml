@@ -1,0 +1,141 @@
+server:
+  port: 9007
+
+spring:
+#  application:
+#    name: inventory-service
+
+  # Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/inventory_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  #  datasource:
+  #    url: jdbc:postgresql://localhost:5432/inventory_service_db
+  #    username: postgres
+  #    password: password
+  #    driver-class-name: org.postgresql.Driver
+  #
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+  #  jpa:
+  #    hibernate:
+  #      ddl-auto: update   # <== Sửa dòng này từ 'validate' thành 'update'
+  #    show-sql: false
+  #    properties:
+  #      hibernate:
+  #        dialect: org.hibernate.dialect.PostgreSQLDialect
+  #        format_sql: true
+
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:19092,localhost:19093,localhost:19094
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: true
+
+    consumer:
+      group-id: inventory-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"
+
+# Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      product-service:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+      cart-service:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+      order-service:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakers,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    com.stu.inventory_service: DEBUG
+    org.springframework.kafka: INFO
+    io.github.resilience4j: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Custom Configuration
+inventory:
+  # Stock thresholds
+  default-low-stock-threshold: 10
+  default-reorder-point: 5
+
+  # Event topics
+  kafka:
+    topics:
+      product-events: product-events
+      cart-events: cart-events
+      order-events: order-events
+      inventory-events: inventory-events
+
+  # External services
+  services:
+    product:
+      url: http://localhost:9002
+      timeout: 5000
+    cart:
+      url: http://localhost:9003
+      timeout: 5000
+    order:
+      url: http://localhost:9004
+      timeout: 5000
+
+
+#jwt:
+#  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+# Eureka configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    enabled: true

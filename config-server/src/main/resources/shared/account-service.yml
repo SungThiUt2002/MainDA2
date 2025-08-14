@@ -1,9 +1,9 @@
 server:
   port: 9003
-
+#
 spring:
-  application:
-    name: account-service
+#  application:
+#    name: account-service
 
   datasource:
     url: jdbc:mysql://localhost:3306/account_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
@@ -33,14 +33,14 @@ spring:
 #      properties:
 #        enable.idempotence: true
 #        max.in.flight.requests.per.connection: 5
-
+#
 #jwt:
 #  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
 #  expiration: 180000 #3p
 #  refresh-expiration: 360000 #6p
-  #  86400000  # 24 giờ → refreshToken
-  # expiration: 86400000
-  # refresh-expiration: 604800000
+#  #  86400000  # 24 giờ → refreshToken
+#  # expiration: 86400000
+#  # refresh-expiration: 604800000
 
 logging:
   level:
@@ -53,3 +53,10 @@ security:
 app:
   cart-service:
     url: http://localhost:9008 # hoặc tên service trong docker/k8s
+
+# Eureka configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    enabled: true
