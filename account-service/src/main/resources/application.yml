@@ -34,13 +34,6 @@ spring:
 #        enable.idempotence: true
 #        max.in.flight.requests.per.connection: 5
 
-# Eureka configuration
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-    enabled: true
-
 jwt:
   secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   expiration: 180000 #3p
