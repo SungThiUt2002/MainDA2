@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getProductById } from "../../api/productApi";
 import { addToCart } from "../../api/cartApi";
+import { getInventoryByProductId } from "../../api/inventoryApi";
 import "./ProductDetailPage.css";
 
 const ProductDetailPage = () => {
@@ -12,6 +13,7 @@ const ProductDetailPage = () => {
   const [mainImage, setMainImage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [inventoryInfo, setInventoryInfo] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -20,20 +22,20 @@ const ProductDetailPage = () => {
         setProduct(res.data);
         setMainImage(res.data.images?.[0] ? (typeof res.data.images[0] === 'object' ? res.data.images[0].url : res.data.images[0]) : "");
 
-        // Chỉ gọi API brands nếu có brandId
-        if (res.data.brandId) {
-          try {
-            const brandRes = await fetch(`http://localhost:9001/api/v1/brands/${res.data.brandId}`);
-            if (brandRes.ok) {
-              const brandData = await brandRes.json();
-              setBrandName(brandData.name);
-            }
-          } catch (brandErr) {
-            console.error("Lỗi khi tải thông tin brand:", brandErr);
-            setBrandName("Không xác định");
-          }
+        // Lấy thông tin brand từ response của product
+        if (res.data.brand && res.data.brand.name) {
+          setBrandName(res.data.brand.name);
         } else {
           setBrandName("Không có thương hiệu");
+        }
+
+        // Lấy thông tin tồn kho
+        try {
+          const inventoryRes = await getInventoryByProductId(id);
+          setInventoryInfo(inventoryRes.data);
+        } catch (inventoryErr) {
+          console.error("Lỗi khi tải thông tin tồn kho:", inventoryErr);
+          // Không set error vì đây không phải lỗi nghiêm trọng
         }
       } catch (err) {
         setError("Không thể tải chi tiết sản phẩm.");
@@ -115,8 +117,23 @@ const ProductDetailPage = () => {
         <div className="info-section">
           <h1 className="product-title">{product.name}</h1>
           <p className="product-price">{product.price.toLocaleString()} ₫</p>
-          <p><strong>Đã bán:</strong> {product.soldQuantity}</p>
-          <p><strong>Tồn kho:</strong> {product.stock}</p>
+          
+                     {/* Thông tin tồn kho từ inventory API */}
+           {inventoryInfo && (
+             <>
+               <p><strong>Đã bán:</strong> {inventoryInfo.soldQuantity || product.soldQuantity || 0}</p>
+               <p><strong>Tồn kho:</strong> {inventoryInfo.availableQuantity || product.stock || 0}</p>
+             </>
+           )}
+          
+          {/* Fallback nếu không có inventory info */}
+          {!inventoryInfo && (
+            <>
+              <p><strong>Đã bán:</strong> {product.soldQuantity || 0}</p>
+              <p><strong>Tồn kho:</strong> {product.stock || 0}</p>
+            </>
+          )}
+          
           <p><strong>Thương hiệu:</strong> {brandName}</p>
           <div className="product-description">
             <strong>Mô tả:</strong>

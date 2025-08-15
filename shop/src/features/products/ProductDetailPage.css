@@ -23,6 +23,8 @@
   font-size: 14px;
   margin-bottom: 0.5rem;
   color: #888;
+  text-align: left;
+  align-self: flex-start;
 }
 
 /* Cấu trúc nút quay lại */
@@ -98,12 +100,21 @@
 .info-section {
   font-size: 16px;
   line-height: 1.6;
+  text-align: left;
+}
+
+.info-section p {
+  text-align: left;
+  width: 100%;
+  margin: 0.5rem 0;
 }
 
 .product-title {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 1rem;
+  text-align: left;
+  width: 100%;
 }
 
 .product-price {
@@ -111,18 +122,24 @@
   font-size: 22px;
   font-weight: bold;
   margin-bottom: 1rem;
+  text-align: left;
+  width: 100%;
 }
 
 .product-description {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px dashed #ddd;
+  text-align: left;
+  width: 100%;
 }
 
 .product-desc-text {
   margin-top: 0.5rem;
   line-height: 1.6;
   color: #444;
+  text-align: left;
+  width: 100%;
 }
 
 /* Nút thêm vào giỏ hàng */
@@ -135,6 +152,8 @@
   border-radius: 8px;
   margin-top: 1.5rem;
   cursor: pointer;
+  text-align: center;
+  width: fit-content;
 }
 
 /* Cập nhật cho phần Header (Thanh điều hướng) */
@@ -147,7 +166,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(to right, #f53d2d, #ff7337);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 1rem 2rem;
   color: white;
   height: 60px;

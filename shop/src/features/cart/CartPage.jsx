@@ -303,7 +303,7 @@ const CartPage = () => {
   // Function xử lý khi checkout thành công
   const handleCheckoutSuccess = () => {
     // Chuyển hướng đến trang Order History
-    navigate("/orders");
+    navigate("/");
   };
 
   // Debug: Log current state (chỉ giữ lại khi cần debug)
