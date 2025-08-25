@@ -6,15 +6,11 @@ pipeline {
         jdk 'Java21'
     }
     
-
     environment {
         DOCKER_REGISTRY = 'your-registry'
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-        // Ensure JAVA_HOME is set correctly
-        JAVA_HOME = tool('Java21')
-        MAVEN_HOME = tool('Maven')
-        PATH = "${env.MAVEN_HOME}/bin:${env.JAVA_HOME}/bin:${env.PATH}"
     }
+    
     stages {
         stage('Checkout') {
             steps {
@@ -57,9 +53,9 @@ pipeline {
                         always {
                             script {
                                 if (fileExists('Account-Service/target/surefire-reports/*.xml')) {
-                                    publishTestResults testResultsPattern: 'Account-Service/target/surefire-reports/*.xml'
+                                    junit 'Account-Service/target/surefire-reports/*.xml'
                                 } else if (fileExists('account-service/target/surefire-reports/*.xml')) {
-                                    publishTestResults testResultsPattern: 'account-service/target/surefire-reports/*.xml'
+                                    junit 'account-service/target/surefire-reports/*.xml'
                                 }
                             }
                         }
@@ -88,9 +84,9 @@ pipeline {
                         always {
                             script {
                                 if (fileExists('Cart-Service/target/surefire-reports/*.xml')) {
-                                    publishTestResults testResultsPattern: 'Cart-Service/target/surefire-reports/*.xml'
+                                    junit 'Cart-Service/target/surefire-reports/*.xml'
                                 } else if (fileExists('cart-service/target/surefire-reports/*.xml')) {
-                                    publishTestResults testResultsPattern: 'cart-service/target/surefire-reports/*.xml'
+                                    junit 'cart-service/target/surefire-reports/*.xml'
                                 }
                             }
                         }
@@ -356,7 +352,7 @@ pipeline {
                 
                 // Publish test reports if they exist  
                 if (sh(script: "find . -name '*.xml' -path '*/surefire-reports/*' | head -1", returnStatus: true) == 0) {
-                    publishTestResults testResultsPattern: '**/target/surefire-reports/*.xml'
+                    junit '**/target/surefire-reports/*.xml'
                 }
             }
         }
@@ -373,7 +369,11 @@ pipeline {
             // Show recent logs for debugging
             sh '''
                 echo "=== Recent logs for debugging ==="
-                docker-compose logs --tail=50 || echo "No docker-compose logs available"
+                if command -v docker-compose &> /dev/null; then
+                    docker-compose logs --tail=50 || echo "No docker-compose logs available"
+                else
+                    echo "docker-compose command not found"
+                fi
             '''
         }
         unstable {
