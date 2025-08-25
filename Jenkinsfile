@@ -6,16 +6,15 @@ pipeline {
         jdk 'Java21'
     }
     
+
     environment {
         DOCKER_REGISTRY = 'your-registry'
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
         // Ensure JAVA_HOME is set correctly
         JAVA_HOME = tool('Java21')
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         MAVEN_HOME = tool('Maven')
-        PATH = "${env.MAVEN_HOME}/bin:${env.PATH}"
+        PATH = "${env.MAVEN_HOME}/bin:${env.JAVA_HOME}/bin:${env.PATH}"
     }
-    
     stages {
         stage('Checkout') {
             steps {
