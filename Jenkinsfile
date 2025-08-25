@@ -224,8 +224,8 @@ pipeline {
         stage('Deploy Services') {
             when {
                 anyOf {
-                    fileExists 'docker-compose.yml'
-                    fileExists 'docker-compose.yaml'
+                    expression { fileExists('docker-compose.yml') }
+                    expression { fileExists('docker-compose.yaml') }
                 }
             }
             steps {
