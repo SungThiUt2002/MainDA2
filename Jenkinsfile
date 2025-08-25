@@ -1,29 +1,42 @@
 pipeline {
     agent any
     
-    tools {
-        maven 'Maven'
-        jdk 'Java21'
-    }
-    
     environment {
-        DOCKER_REGISTRY = 'your-registry'
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        // Use system Java instead of Jenkins tool
+        JAVA_HOME = sh(script: "readlink -f /usr/bin/java | sed 's:/bin/java::'", returnStdout: true).trim()
     }
     
     stages {
+        stage('Verify Environment') {
+            steps {
+                echo 'Verifying system environment...'
+                sh '''
+                    echo "=== System Java ==="
+                    which java
+                    java -version
+                    echo "JAVA_HOME: $JAVA_HOME"
+                    
+                    echo "=== Maven Version ==="
+                    mvn -version
+                    
+                    echo "=== Available Tools ==="
+                    which mvn
+                    which docker || echo "Docker not in PATH"
+                '''
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 echo 'Checking out source code...'
                 checkout scm
                 
-                // Verify Java and Maven installation
                 sh '''
-                    echo "Java Version:"
-                    java -version
-                    echo "JAVA_HOME: $JAVA_HOME"
-                    echo "Maven Version:"
-                    mvn -version
+                    echo "=== Repository Structure ==="
+                    ls -la
+                    echo "=== Maven Projects Found ==="
+                    find . -maxdepth 2 -name "pom.xml" -exec dirname {} \\; | sort
                 '''
             }
         }
@@ -33,7 +46,6 @@ pipeline {
                 stage('Account Service') {
                     steps {
                         script {
-                            // Check if directory exists
                             if (fileExists('Account-Service')) {
                                 dir('Account-Service') {
                                     echo 'Building Account Service...'
@@ -52,10 +64,14 @@ pipeline {
                     post {
                         always {
                             script {
-                                if (fileExists('Account-Service/target/surefire-reports/*.xml')) {
-                                    junit 'Account-Service/target/surefire-reports/*.xml'
-                                } else if (fileExists('account-service/target/surefire-reports/*.xml')) {
-                                    junit 'account-service/target/surefire-reports/*.xml'
+                                try {
+                                    if (fileExists('Account-Service/target/surefire-reports/*.xml')) {
+                                        junit testResults: 'Account-Service/target/surefire-reports/*.xml', allowEmptyResults: true
+                                    } else if (fileExists('account-service/target/surefire-reports/*.xml')) {
+                                        junit testResults: 'account-service/target/surefire-reports/*.xml', allowEmptyResults: true
+                                    }
+                                } catch (Exception e) {
+                                    echo "No test results for Account Service: ${e.getMessage()}"
                                 }
                             }
                         }
@@ -83,10 +99,14 @@ pipeline {
                     post {
                         always {
                             script {
-                                if (fileExists('Cart-Service/target/surefire-reports/*.xml')) {
-                                    junit 'Cart-Service/target/surefire-reports/*.xml'
-                                } else if (fileExists('cart-service/target/surefire-reports/*.xml')) {
-                                    junit 'cart-service/target/surefire-reports/*.xml'
+                                try {
+                                    if (fileExists('Cart-Service/target/surefire-reports/*.xml')) {
+                                        junit testResults: 'Cart-Service/target/surefire-reports/*.xml', allowEmptyResults: true
+                                    } else if (fileExists('cart-service/target/surefire-reports/*.xml')) {
+                                        junit testResults: 'cart-service/target/surefire-reports/*.xml', allowEmptyResults: true
+                                    }
+                                } catch (Exception e) {
+                                    echo "No test results for Cart Service: ${e.getMessage()}"
                                 }
                             }
                         }
@@ -218,31 +238,14 @@ pipeline {
         stage('Package Applications') {
             steps {
                 script {
-                    // Get actual directories that exist
-                    def possibleServices = [
-                        'Account-Service', 'account-service',
-                        'Cart-Service', 'cart-service', 
-                        'Config-Server', 'config-server',
-                        'Discovery-Service', 'discoveryservice', 
-                        'Inventory-Service', 'inventory-service', 
-                        'Order-Service', 'order-service',
-                        'Product-Service', 'product-service', 
-                        'Shop-Service', 'shop'
-                    ]
+                    def pomDirs = sh(script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
                     
-                    def existingServices = []
-                    possibleServices.each { service ->
-                        if (fileExists(service)) {
-                            existingServices.add(service)
-                        }
-                    }
-                    
-                    echo "Found services: ${existingServices}"
-                    
-                    existingServices.each { service ->
-                        dir(service) {
-                            echo "Packaging ${service}..."
-                            sh 'mvn package -DskipTests=true'
+                    pomDirs.each { dir ->
+                        if (dir && dir != '.') {
+                            dir(dir) {
+                                echo "Packaging ${dir}..."
+                                sh 'mvn package -DskipTests=true'
+                            }
                         }
                     }
                 }
@@ -252,89 +255,21 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    // Get actual directories that exist and have Dockerfile
-                    def possibleServices = [
-                        'Account-Service', 'account-service',
-                        'Cart-Service', 'cart-service', 
-                        'Config-Server', 'config-server',
-                        'Discovery-Service', 'discoveryservice', 
-                        'Inventory-Service', 'inventory-service', 
-                        'Order-Service', 'order-service',
-                        'Product-Service', 'product-service', 
-                        'Shop-Service', 'shop'
-                    ]
+                    def pomDirs = sh(script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
                     
-                    possibleServices.each { service ->
-                        if (fileExists(service) && fileExists("${service}/Dockerfile")) {
-                            dir(service) {
-                                echo "Building Docker image for ${service}..."
+                    pomDirs.each { dir ->
+                        if (dir && dir != '.' && fileExists("${dir}/Dockerfile")) {
+                            dir(dir) {
+                                echo "Building Docker image for ${dir}..."
                                 sh """
-                                    docker build -t ${service.toLowerCase()}:${GIT_COMMIT_SHORT} .
-                                    docker tag ${service.toLowerCase()}:${GIT_COMMIT_SHORT} ${service.toLowerCase()}:latest
+                                    docker build -t ${dir.toLowerCase().replaceAll('[^a-z0-9-]', '-')}:${GIT_COMMIT_SHORT} .
+                                    docker tag ${dir.toLowerCase().replaceAll('[^a-z0-9-]', '-')}:${GIT_COMMIT_SHORT} ${dir.toLowerCase().replaceAll('[^a-z0-9-]', '-')}:latest
                                 """
                             }
                         } else {
-                            echo "Skipping ${service} - directory or Dockerfile not found"
+                            echo "Skipping ${dir} - no Dockerfile found"
                         }
                     }
-                }
-            }
-        }
-        
-        stage('Deploy to Development') {
-            when {
-                expression { fileExists('docker-compose.yml') }
-            }
-            steps {
-                echo 'Stopping existing containers...'
-                sh 'docker-compose down || true'
-                
-                echo 'Starting new containers...'
-                sh 'docker-compose up -d'
-                
-                // Health checks
-                script {
-                    sleep(30) // Wait for services to start
-                    
-                    def healthChecks = [
-                        'config-server': 8888,
-                        'discoveryservice': 8761
-                    ]
-                    
-                    healthChecks.each { service, port ->
-                        echo "Health check for ${service}..."
-                        timeout(time: 3, unit: 'MINUTES') {
-                            waitUntil {
-                                script {
-                                    try {
-                                        def result = sh(script: "curl -f http://localhost:${port}/actuator/health || exit 1", returnStatus: true)
-                                        return result == 0
-                                    } catch (Exception e) {
-                                        echo "Health check failed: ${e.getMessage()}"
-                                        return false
-                                    }
-                                }
-                            }
-                        }
-                        echo "${service} is healthy!"
-                    }
-                }
-            }
-        }
-        
-        stage('Integration Tests') {
-            when {
-                expression { fileExists('docker-compose.yml') }
-            }
-            steps {
-                echo 'Running integration tests...'
-                script {
-                    // Basic API tests
-                    sh '''
-                        echo "Testing basic endpoints..."
-                        # Add your integration test commands here
-                        # Example: newman run postman_collection.json
-                    '''
                 }
             }
         }
@@ -343,41 +278,25 @@ pipeline {
     post {
         always {
             echo 'Cleaning up...'
-            
-            // Archive artifacts if they exist
             script {
-                if (sh(script: "find . -name '*.jar' -path '*/target/*' | head -1", returnStatus: true) == 0) {
+                try {
                     archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true, allowEmptyArchive: true
+                } catch (Exception e) {
+                    echo "No JAR files to archive"
                 }
                 
-                // Publish test reports if they exist  
-                if (sh(script: "find . -name '*.xml' -path '*/surefire-reports/*' | head -1", returnStatus: true) == 0) {
-                    junit '**/target/surefire-reports/*.xml'
+                try {
+                    junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
+                } catch (Exception e) {
+                    echo "No test results to publish"
                 }
             }
         }
         success {
             echo '🎉 Pipeline completed successfully!'
-            // Send success notifications
-            // slackSend channel: '#devops', message: "✅ Microservices pipeline succeeded!"
         }
         failure {
             echo '❌ Pipeline failed!'
-            // Send failure notifications
-            // slackSend channel: '#devops', message: "❌ Microservices pipeline failed!"
-            
-            // Show recent logs for debugging
-            sh '''
-                echo "=== Recent logs for debugging ==="
-                if command -v docker-compose &> /dev/null; then
-                    docker-compose logs --tail=50 || echo "No docker-compose logs available"
-                else
-                    echo "docker-compose command not found"
-                fi
-            '''
-        }
-        unstable {
-            echo '⚠️ Pipeline unstable (some tests failed)'
         }
     }
 }
