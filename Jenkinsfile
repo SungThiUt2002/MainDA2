@@ -78,7 +78,7 @@ pipeline {
             steps {
                 script {
                     def output = sh(
-                        script: "find . -maxdepth 2 -name 'Dockerfile' -exec dirname {} \\;",
+                        script: 'find . -maxdepth 2 -name "Dockerfile" -exec dirname {} \\;',
                         returnStdout: true
                     ).trim()
                     
