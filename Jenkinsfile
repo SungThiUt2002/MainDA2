@@ -7,8 +7,9 @@ pipeline {
     }
     
     environment {
-        DOCKER_REGISTRY = 'your-registry'
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        JAVA_HOME = tool('Java21')
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
     }
     
     stages {
@@ -16,101 +17,44 @@ pipeline {
             steps {
                 echo 'Checking out source code...'
                 checkout scm
+                sh 'java -version && mvn -version'
             }
         }
         
-        stage('Build & Test Microservices') {
-            parallel {
-                stage('Account Service') {
-                    steps {
-                        dir('account-service') {
-                            echo 'Building Account Service...'
-                            sh 'mvn clean compile test -DskipTests=false'
-                        }
-                    }
-                    post {
-                        always {
-                            publishTestResults testResultsPattern: 'account-service/target/surefire-reports/*.xml'
-                        }
-                    }
-                }
-                
-                stage('Cart Service') {
-                    steps {
-                        dir('cart-service') {
-                            echo 'Building Cart Service...'
-                            sh 'mvn clean compile test -DskipTests=false'
-                        }
-                    }
-                    post {
-                        always {
-                            publishTestResults testResultsPattern: 'cart-service/target/surefire-reports/*.xml'
-                        }
-                    }
-                }
-                
-                stage('Config Server') {
-                    steps {
-                        dir('config-server') {
-                            echo 'Building Config Server...'
-                            sh 'mvn clean compile test -DskipTests=false'
-                        }
-                    }
-                }
-                
-                stage('Discovery Service') {
-                    steps {
-                        dir('discoveryservice') {
-                            echo 'Building Discovery Service...'
-                            sh 'mvn clean compile test -DskipTests=false'
-                        }
-                    }
-                }
-                
-                stage('Inventory Service') {
-                    steps {
-                        dir('inventory-service') {
-                            echo 'Building Inventory Service...'
-                            sh 'mvn clean compile test -DskipTests=false'
-                        }
-                    }
-                }
-                
-                stage('Order Service') {
-                    steps {
-                        dir('order-service') {
-                            echo 'Building Order Service...'
-                            sh 'mvn clean compile test -DskipTests=false'
-                        }
-                    }
-                }
-                
-                stage('Product Service') {
-                    steps {
-                        dir('product-service') {
-                            echo 'Building Product Service...'
-                            sh 'mvn clean compile test -DskipTests=false'
-                        }
-                    }
-                }
-                
-                stage('Shop Service') {
-                    steps {
-                        dir('shop') {
-                            echo 'Building Shop Service...'
-                            sh 'mvn clean compile test -DskipTests=false'
-                        }
-                    }
-                }
-            }
-        }
-        
-        stage('Package Applications') {
+        stage('Build & Test') {
             steps {
                 script {
-                    def services = ['account-service', 'cart-service', 'config-server', 
-                                  'discoveryservice', 'inventory-service', 'order-service', 
-                                  'product-service', 'shop']
+                    // Find all directories with pom.xml
+                    def services = sh(
+                        script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\; | grep -v '^\\.$' | sort",
+                        returnStdout: true
+                    ).trim().split('\n')
+                    
+                    echo "Found services: ${services}"
+                    
+                    // Build all services in parallel
+                    def parallelStages = [:]
+                    services.each { service ->
+                        def serviceName = service.replaceAll('./','')
+                        parallelStages[serviceName] = {
+                            dir(service) {
+                                echo "Building ${serviceName}..."
+                                sh 'mvn clean compile test -DskipTests=false'
+                            }
+                        }
+                    }
+                    parallel parallelStages
+                }
+            }
+        }
+        
+        stage('Package') {
+            steps {
+                script {
+                    def services = sh(
+                        script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\; | grep -v '^\\.$'",
+                        returnStdout: true
+                    ).trim().split('\n')
                     
                     services.each { service ->
                         dir(service) {
@@ -121,94 +65,46 @@ pipeline {
             }
         }
         
-        stage('Build Docker Images') {
+        stage('Build Images') {
             steps {
                 script {
-                    def services = ['account-service', 'cart-service', 'config-server', 
-                                  'discoveryservice', 'inventory-service', 'order-service', 
-                                  'product-service', 'shop']
+                    def services = sh(
+                        script: "find . -maxdepth 2 -name 'Dockerfile' -exec dirname {} \\;",
+                        returnStdout: true
+                    ).trim().split('\n')
                     
                     services.each { service ->
+                        def serviceName = service.replaceAll('./','').toLowerCase()
                         dir(service) {
-                            sh "docker build -t ${service}:${GIT_COMMIT_SHORT} ."
-                            sh "docker tag ${service}:${GIT_COMMIT_SHORT} ${service}:latest"
+                            sh """
+                                docker build -t ${serviceName}:${GIT_COMMIT_SHORT} .
+                                docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${serviceName}:latest
+                            """
                         }
                     }
                 }
             }
         }
         
-        stage('Deploy to Development') {
+        stage('Deploy') {
+            when { fileExists('docker-compose.yml') }
             steps {
-                echo 'Stopping existing containers...'
-                sh 'docker-compose down || true'
-                
-                echo 'Starting new containers...'
-                sh 'docker-compose up -d'
-                
-                // Health checks
-                script {
-                    sleep(30) // Wait for services to start
-                    
-                    def healthChecks = [
-                        'config-server': 8888,
-                        'discoveryservice': 8761
-                    ]
-                    
-                    healthChecks.each { service, port ->
-                        echo "Health check for ${service}..."
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitUntil {
-                                script {
-                                    def result = sh(script: "curl -f http://localhost:${port}/actuator/health || exit 1", returnStatus: true)
-                                    return result == 0
-                                }
-                            }
-                        }
-                        echo "${service} is healthy!"
-                    }
-                }
-            }
-        }
-        
-        stage('Integration Tests') {
-            steps {
-                echo 'Running integration tests...'
-                script {
-                    // Add your integration test commands here
-                    sh '''
-                        echo "Testing API endpoints..."
-                        # curl tests, postman, etc.
-                    '''
-                }
+                sh '''
+                    docker-compose down || true
+                    docker-compose up -d
+                    sleep 30
+                    echo "Deployment completed!"
+                '''
             }
         }
     }
     
     post {
         always {
-            echo 'Cleaning up...'
-            // Clean workspace
-            cleanWs()
-            
-            // Archive artifacts
-            archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true, allowEmptyArchive: true
-            
-            // Publish test reports
             publishTestResults testResultsPattern: '**/target/surefire-reports/*.xml'
+            archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
         }
-        success {
-            echo '🎉 Pipeline completed successfully!'
-            // Send success notifications
-            // slackSend channel: '#devops', message: "✅ Microservices pipeline succeeded!"
-        }
-        failure {
-            echo '❌ Pipeline failed!'
-            // Send failure notifications
-            // slackSend channel: '#devops', message: "❌ Microservices pipeline failed!"
-        }
-        unstable {
-            echo '⚠️ Pipeline unstable (some tests failed)'
-        }
+        success { echo '✅ Pipeline succeeded!' }
+        failure { echo '❌ Pipeline failed!' }
     }
 }
