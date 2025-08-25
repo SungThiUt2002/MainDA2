@@ -5,24 +5,34 @@ pipeline {
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
         // Use system Java instead of Jenkins tool
         JAVA_HOME = sh(script: "readlink -f /usr/bin/java | sed 's:/bin/java::'", returnStdout: true).trim()
+        // Add Maven to PATH
+        PATH = "/opt/maven/bin:${env.PATH}"
     }
     
     stages {
-        stage('Verify Environment') {
+        stage('Setup Maven') {
             steps {
-                echo 'Verifying system environment...'
+                echo 'Setting up Maven...'
                 sh '''
                     echo "=== System Java ==="
                     which java
                     java -version
                     echo "JAVA_HOME: $JAVA_HOME"
                     
-                    echo "=== Maven Version ==="
-                    mvn -version
+                    echo "=== Installing Maven ==="
+                    # Check if maven is available
+                    if ! command -v mvn &> /dev/null; then
+                        echo "Maven not found, installing..."
+                        cd /tmp
+                        wget -q https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz
+                        tar xzf apache-maven-3.9.6-bin.tar.gz
+                        sudo mv apache-maven-3.9.6 /opt/maven
+                        export PATH=/opt/maven/bin:$PATH
+                        echo "Maven installed to /opt/maven"
+                    fi
                     
-                    echo "=== Available Tools ==="
-                    which mvn
-                    which docker || echo "Docker not in PATH"
+                    echo "=== Maven Version ==="
+                    /opt/maven/bin/mvn -version || mvn -version
                 '''
             }
         }
