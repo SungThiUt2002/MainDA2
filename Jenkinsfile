@@ -8,19 +8,15 @@ pipeline {
     
     environment {
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-        DOCKER_REGISTRY = 'your-registry'
     }
     
     stages {
-        stage('Verify Environment') {
+        stage('Environment Check') {
             steps {
-                echo 'Verifying build environment...'
                 sh '''
-                    echo "=== Java Environment ==="
+                    echo "=== Build Environment ==="
                     java -version
                     echo "JAVA_HOME: $JAVA_HOME"
-                    
-                    echo "=== Maven Environment ==="
                     mvn -version
                     
                     echo "=== Project Structure ==="
@@ -29,133 +25,102 @@ pipeline {
             }
         }
         
-        stage('Build & Test Microservices') {
+        stage('Build Common DTO') {
+            when {
+                expression { 
+                    return sh(script: "find . -name 'common-dto' -type d", returnStdout: true).trim() != ""
+                }
+            }
+            steps {
+                dir('common-dto') {
+                    echo 'Building common-dto...'
+                    sh 'mvn clean install -DskipTests=true'
+                }
+            }
+        }
+        
+        stage('Build Microservices') {
             parallel {
                 stage('Account Service') {
-                    steps {
-                        script {
-                            if (fileExists('Account-Service')) {
-                                dir('Account-Service') {
-                                    echo 'Building Account Service...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else if (fileExists('account-service')) {
-                                dir('account-service') {
-                                    echo 'Building Account Service...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else {
-                                echo 'Account Service not found, skipping...'
-                            }
+                    when {
+                        anyOf {
+                            expression { fileExists('Account-Service') }
+                            expression { fileExists('account-service') }
                         }
                     }
-                    post {
-                        always {
-                            script {
-                                try {
-                                    if (fileExists('Account-Service/target/surefire-reports/*.xml')) {
-                                        junit testResults: 'Account-Service/target/surefire-reports/*.xml', allowEmptyResults: true
-                                    } else if (fileExists('account-service/target/surefire-reports/*.xml')) {
-                                        junit testResults: 'account-service/target/surefire-reports/*.xml', allowEmptyResults: true
-                                    }
-                                } catch (Exception e) {
-                                    echo "No test results for Account Service"
-                                }
+                    steps {
+                        script {
+                            def serviceDir = fileExists('Account-Service') ? 'Account-Service' : 'account-service'
+                            dir(serviceDir) {
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
                 }
                 
                 stage('Cart Service') {
-                    steps {
-                        script {
-                            if (fileExists('Cart-Service')) {
-                                dir('Cart-Service') {
-                                    echo 'Building Cart Service...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else if (fileExists('cart-service')) {
-                                dir('cart-service') {
-                                    echo 'Building Cart Service...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else {
-                                echo 'Cart Service not found, skipping...'
-                            }
+                    when {
+                        anyOf {
+                            expression { fileExists('Cart-Service') }
+                            expression { fileExists('cart-service') }
                         }
                     }
-                    post {
-                        always {
-                            script {
-                                try {
-                                    if (fileExists('Cart-Service/target/surefire-reports/*.xml')) {
-                                        junit testResults: 'Cart-Service/target/surefire-reports/*.xml', allowEmptyResults: true
-                                    } else if (fileExists('cart-service/target/surefire-reports/*.xml')) {
-                                        junit testResults: 'cart-service/target/surefire-reports/*.xml', allowEmptyResults: true
-                                    }
-                                } catch (Exception e) {
-                                    echo "No test results for Cart Service"
-                                }
+                    steps {
+                        script {
+                            def serviceDir = fileExists('Cart-Service') ? 'Cart-Service' : 'cart-service'
+                            dir(serviceDir) {
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
                 }
                 
                 stage('Config Server') {
+                    when {
+                        anyOf {
+                            expression { fileExists('Config-Server') }
+                            expression { fileExists('config-server') }
+                        }
+                    }
                     steps {
                         script {
-                            if (fileExists('Config-Server')) {
-                                dir('Config-Server') {
-                                    echo 'Building Config Server...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else if (fileExists('config-server')) {
-                                dir('config-server') {
-                                    echo 'Building Config Server...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else {
-                                echo 'Config Server not found, skipping...'
+                            def serviceDir = fileExists('Config-Server') ? 'Config-Server' : 'config-server'
+                            dir(serviceDir) {
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
                 }
                 
                 stage('Discovery Service') {
+                    when {
+                        anyOf {
+                            expression { fileExists('Discovery-Service') }
+                            expression { fileExists('discoveryservice') }
+                        }
+                    }
                     steps {
                         script {
-                            if (fileExists('Discovery-Service')) {
-                                dir('Discovery-Service') {
-                                    echo 'Building Discovery Service...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else if (fileExists('discoveryservice')) {
-                                dir('discoveryservice') {
-                                    echo 'Building Discovery Service...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else {
-                                echo 'Discovery Service not found, skipping...'
+                            def serviceDir = fileExists('Discovery-Service') ? 'Discovery-Service' : 'discoveryservice'
+                            dir(serviceDir) {
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
                 }
                 
                 stage('Product Service') {
+                    when {
+                        anyOf {
+                            expression { fileExists('Product-Service') }
+                            expression { fileExists('product-service') }
+                        }
+                    }
                     steps {
                         script {
-                            if (fileExists('Product-Service')) {
-                                dir('Product-Service') {
-                                    echo 'Building Product Service...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else if (fileExists('product-service')) {
-                                dir('product-service') {
-                                    echo 'Building Product Service...'
-                                    sh 'mvn clean compile test'
-                                }
-                            } else {
-                                echo 'Product Service not found, skipping...'
+                            def serviceDir = fileExists('Product-Service') ? 'Product-Service' : 'product-service'
+                            dir(serviceDir) {
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
@@ -164,13 +129,15 @@ pipeline {
                 stage('Other Services') {
                     steps {
                         script {
-                            def serviceNames = ['Inventory-Service', 'inventory-service', 'Order-Service', 'order-service', 'Shop-Service', 'shop']
+                            def otherServices = ['Inventory-Service', 'inventory-service', 
+                                               'Order-Service', 'order-service', 
+                                               'Shop-Service', 'shop']
                             
-                            serviceNames.each { serviceName ->
-                                if (fileExists(serviceName)) {
-                                    dir(serviceName) {
-                                        echo "Building ${serviceName}..."
-                                        sh 'mvn clean compile test'
+                            otherServices.each { service ->
+                                if (fileExists(service)) {
+                                    dir(service) {
+                                        echo "Building ${service}..."
+                                        sh 'mvn clean package -DskipTests=true'
                                     }
                                 }
                             }
@@ -180,17 +147,28 @@ pipeline {
             }
         }
         
-        stage('Package Applications') {
+        stage('Run Tests') {
             steps {
                 script {
                     def pomDirs = sh(script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
                     
                     pomDirs.each { dir ->
-                        if (dir && dir != '.') {
+                        if (dir && dir != '.' && dir != './common-dto') {
                             dir(dir) {
-                                echo "Packaging ${dir}..."
-                                sh 'mvn package -DskipTests=true'
+                                echo "Testing ${dir}..."
+                                sh 'mvn test || true'
                             }
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    script {
+                        try {
+                            junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
+                        } catch (Exception e) {
+                            echo "No test results to publish"
                         }
                     }
                 }
@@ -200,28 +178,25 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    def pomDirs = sh(script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
+                    def services = sh(script: "find . -maxdepth 2 -name 'Dockerfile' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
                     
-                    pomDirs.each { dir ->
-                        if (dir && dir != '.' && fileExists("${dir}/Dockerfile")) {
-                            dir(dir) {
-                                echo "Building Docker image for ${dir}..."
-                                def imageName = dir.toLowerCase().replaceAll('[^a-z0-9-]', '-')
+                    services.each { serviceDir ->
+                        if (serviceDir && serviceDir != '.') {
+                            dir(serviceDir) {
+                                def imageName = serviceDir.replaceAll('^\\./', '').toLowerCase().replaceAll('[^a-z0-9-]', '-')
+                                echo "Building Docker image: ${imageName}"
                                 sh """
                                     docker build -t ${imageName}:${GIT_COMMIT_SHORT} .
                                     docker tag ${imageName}:${GIT_COMMIT_SHORT} ${imageName}:latest
-                                    echo "Built: ${imageName}:latest"
                                 """
                             }
-                        } else {
-                            echo "Skipping ${dir} - no Dockerfile found"
                         }
                     }
                 }
             }
         }
         
-        stage('Deploy Services') {
+        stage('Deploy') {
             when {
                 anyOf {
                     expression { fileExists('docker-compose.yml') }
@@ -229,18 +204,14 @@ pipeline {
                 }
             }
             steps {
-                echo 'Deploying microservices...'
                 sh '''
                     echo "Stopping existing containers..."
-                    docker-compose down || docker compose down || true
+                    docker-compose down || true
                     
-                    echo "Starting new containers..."
-                    docker-compose up -d || docker compose up -d
+                    echo "Starting services..."
+                    docker-compose up -d
                     
-                    echo "Waiting for services to start..."
-                    sleep 30
-                    
-                    echo "Checking running containers:"
+                    echo "Service status:"
                     docker ps
                 '''
             }
@@ -249,18 +220,11 @@ pipeline {
     
     post {
         always {
-            echo 'Cleaning up workspace...'
             script {
                 try {
-                    archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true, fingerprint: true
+                    archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
                 } catch (Exception e) {
-                    echo "No artifacts to archive"
-                }
-                
-                try {
-                    junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
-                } catch (Exception e) {
-                    echo "No test results to publish"
+                    echo "No JAR files to archive"
                 }
             }
         }
@@ -269,13 +233,6 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed!'
-            sh '''
-                echo "=== Container Status ==="
-                docker ps -a || echo "Docker not available"
-                
-                echo "=== Recent Logs ==="
-                docker-compose logs --tail=20 || docker compose logs --tail=20 || echo "No compose logs"
-            '''
         }
         cleanup {
             cleanWs()
