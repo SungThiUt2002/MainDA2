@@ -27,6 +27,37 @@ pipeline {
             }
         }
         
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        echo "=== Running SonarQube Analysis ==="
+                        export JAVA_HOME=/var/jenkins_home/tools/hudson.model.JDK/Java21/jdk-21.0.8+9
+                        echo "Using JAVA_HOME: $JAVA_HOME"
+                        mvn clean verify sonar:sonar \
+                            -Dsonar.projectKey=microservices-project \
+                            -Dsonar.projectName="Microservices Project" \
+                            -Dsonar.projectVersion=${GIT_COMMIT_SHORT}
+                    '''
+                }
+            }
+        }
+        
+        stage('Quality Gate') {
+            steps {
+                script {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        } else {
+                            echo "Quality Gate passed"
+                        }
+                    }
+                }
+            }
+        }
+        
         stage('Build Common DTO') {
             when {
                 expression { 
