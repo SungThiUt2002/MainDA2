@@ -152,10 +152,7 @@ pipeline {
                         script {
                             def serviceDir = fileExists('Product-Service') ? 'Product-Service' : 'product-service'
                             dir(serviceDir) {
-                                sh '''
-                                    export JAVA_HOME=$JAVA_HOME
-                                    mvn clean package -DskipTests=true
-                                '''
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
