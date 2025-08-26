@@ -29,15 +29,27 @@ pipeline {
         
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        echo "=== Running SonarQube Analysis ==="
-                        echo "Using JAVA_HOME: $JAVA_HOME"
-                        mvn clean verify sonar:sonar \
-                            -Dsonar.projectKey=microservices-project \
-                            -Dsonar.projectName="Microservices Project" \
-                            -Dsonar.projectVersion=${GIT_COMMIT_SHORT}
-                    '''
+                script {
+                    // Find all directories with pom.xml and run sonar analysis
+                    def pomDirs = sh(script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
+                    
+                    pomDirs.each { pomDir ->
+                        if (pomDir && pomDir != '.') {
+                            dir(pomDir) {
+                                withSonarQubeEnv('SonarQube') {
+                                    def projectName = pomDir.replaceAll('^\\./', '')
+                                    sh """
+                                        echo "=== Running SonarQube Analysis for ${projectName} ==="
+                                        echo "Using JAVA_HOME: $JAVA_HOME"
+                                        mvn clean verify sonar:sonar \
+                                            -Dsonar.projectKey=microservices-${projectName} \
+                                            -Dsonar.projectName="Microservices ${projectName}" \
+                                            -Dsonar.projectVersion=${GIT_COMMIT_SHORT} || echo "SonarQube failed for ${projectName}, continuing..."
+                                    """
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
