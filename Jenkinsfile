@@ -18,9 +18,15 @@ pipeline {
                     echo "=== Build Environment ==="
                     echo "JAVA_HOME: $JAVA_HOME"
                     export JAVA_HOME=$JAVA_HOME
+                    export PATH=$JAVA_HOME/bin:$PATH
+                    
+                    echo "=== Java Check ==="
+                    ls -la $JAVA_HOME/bin/java
+                    which java
                     java -version
               
                     echo "=== Maven Test ==="
+                    which mvn
                     mvn -version
                 
                     echo "=== Project Structure ==="
@@ -36,6 +42,7 @@ pipeline {
                         echo "=== Running SonarQube Analysis ==="
                         echo "Using JAVA_HOME: $JAVA_HOME"
                         export JAVA_HOME=$JAVA_HOME
+                        export PATH=$JAVA_HOME/bin:$PATH
                         mvn clean verify sonar:sonar \
                             -Dsonar.projectKey=microservices-project \
                             -Dsonar.projectName="Microservices Project" \
@@ -71,6 +78,7 @@ pipeline {
                     echo 'Building common-dto...'
                     sh '''
                         export JAVA_HOME=$JAVA_HOME
+                        export PATH=$JAVA_HOME/bin:$PATH
                         mvn clean install -DskipTests=true
                     '''
                 }
@@ -92,6 +100,7 @@ pipeline {
                             dir(serviceDir) {
                                 sh '''
                                     export JAVA_HOME=$JAVA_HOME
+                                    export PATH=$JAVA_HOME/bin:$PATH
                                     mvn clean package -DskipTests=true
                                 '''
                             }
