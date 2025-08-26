@@ -3,12 +3,11 @@ pipeline {
     
     tools {
         maven 'Maven'
-        jdk 'Java21'
     }
     
     environment {
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-        JAVA_HOME = "${tool 'Java21'}"
+        JAVA_HOME = "/opt/java/openjdk"
     }
     
     stages{
@@ -17,16 +16,9 @@ pipeline {
                 sh '''
                     echo "=== Build Environment ==="
                     echo "JAVA_HOME: $JAVA_HOME"
-                    export JAVA_HOME=$JAVA_HOME
-                    export PATH=$JAVA_HOME/bin:$PATH
-                    
-                    echo "=== Java Check ==="
-                    ls -la $JAVA_HOME/bin/java
-                    which java
                     java -version
               
                     echo "=== Maven Test ==="
-                    which mvn
                     mvn -version
                 
                     echo "=== Project Structure ==="
@@ -41,8 +33,6 @@ pipeline {
                     sh '''
                         echo "=== Running SonarQube Analysis ==="
                         echo "Using JAVA_HOME: $JAVA_HOME"
-                        export JAVA_HOME=$JAVA_HOME
-                        export PATH=$JAVA_HOME/bin:$PATH
                         mvn clean verify sonar:sonar \
                             -Dsonar.projectKey=microservices-project \
                             -Dsonar.projectName="Microservices Project" \
@@ -76,11 +66,7 @@ pipeline {
             steps {
                 dir('common-dto') {
                     echo 'Building common-dto...'
-                    sh '''
-                        export JAVA_HOME=$JAVA_HOME
-                        export PATH=$JAVA_HOME/bin:$PATH
-                        mvn clean install -DskipTests=true
-                    '''
+                    sh 'mvn clean install -DskipTests=true'
                 }
             }
         }
@@ -98,11 +84,7 @@ pipeline {
                         script {
                             def serviceDir = fileExists('Account-Service') ? 'Account-Service' : 'account-service'
                             dir(serviceDir) {
-                                sh '''
-                                    export JAVA_HOME=$JAVA_HOME
-                                    export PATH=$JAVA_HOME/bin:$PATH
-                                    mvn clean package -DskipTests=true
-                                '''
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
@@ -119,10 +101,7 @@ pipeline {
                         script {
                             def serviceDir = fileExists('Cart-Service') ? 'Cart-Service' : 'cart-service'
                             dir(serviceDir) {
-                                sh '''
-                                    export JAVA_HOME=$JAVA_HOME
-                                    mvn clean package -DskipTests=true
-                                '''
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
@@ -139,10 +118,7 @@ pipeline {
                         script {
                             def serviceDir = fileExists('Config-Server') ? 'Config-Server' : 'config-server'
                             dir(serviceDir) {
-                                sh '''
-                                    export JAVA_HOME=$JAVA_HOME
-                                    mvn clean package -DskipTests=true
-                                '''
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
@@ -159,10 +135,7 @@ pipeline {
                         script {
                             def serviceDir = fileExists('Discovery-Service') ? 'Discovery-Service' : 'discoveryservice'
                             dir(serviceDir) {
-                                sh '''
-                                    export JAVA_HOME=$JAVA_HOME
-                                    mvn clean package -DskipTests=true
-                                '''
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
@@ -199,10 +172,7 @@ pipeline {
                                 if (fileExists(service)) {
                                     dir(service) {
                                         echo "Building ${service}..."
-                                        sh '''
-                                            export JAVA_HOME=$JAVA_HOME
-                                            mvn clean package -DskipTests=true
-                                        '''
+                                        sh 'mvn clean package -DskipTests=true'
                                     }
                                 }
                             }
@@ -221,10 +191,7 @@ pipeline {
                         if (dir && dir != '.' && dir != './common-dto') {
                             dir(dir) {
                                 echo "Testing ${dir}..."
-                                sh '''
-                                    export JAVA_HOME=$JAVA_HOME
-                                    mvn test || true
-                                '''
+                                sh 'mvn test || true'
                             }
                         }
                     }
