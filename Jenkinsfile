@@ -15,11 +15,12 @@ pipeline {
             steps {
                 sh '''
                     echo "=== Build Environment ==="
-                    java -version
+                    export JAVA_HOME=/var/jenkins_home/tools/hudson.model.JDK/Java21/jdk-21.0.8+9
                     echo "JAVA_HOME: $JAVA_HOME"
+                    java -version
                     
                     echo "=== Maven Test with explicit JAVA_HOME ==="
-                    JAVA_HOME=$JAVA_HOME mvn -version
+                    mvn -version
                     
                     echo "=== Project Structure ==="
                     find . -maxdepth 2 -name "pom.xml" -exec dirname {} \\; | sort
