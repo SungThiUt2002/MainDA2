@@ -10,22 +10,23 @@ pipeline {
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
     }
     
-    stages {
-        stage('Environment Check') {
-            steps {
-                sh '''
-                    echo "=== Build Environment ==="
-                    echo "JAVA_HOME: $JAVA_HOME"
-                    java -version
-                    
-                    echo "=== Maven Test with explicit JAVA_HOME ==="
-                    JAVA_HOME=$JAVA_HOME mvn -version
-                    
-                    echo "=== Project Structure ==="
-                    find . -maxdepth 2 -name "pom.xml" -exec dirname {} \\; | sort
-                '''
-            }
+    stage('Environment Check') {
+    steps {
+        withEnv(["JAVA_HOME=${tool 'Java21'}"]) {
+            sh '''
+                echo "=== Build Environment ==="
+                echo "JAVA_HOME: $JAVA_HOME"
+                java -version
+              
+                echo "=== Maven Test ==="
+                mvn -version
+                
+                echo "=== Project Structure ==="
+                find . -maxdepth 2 -name "pom.xml" -exec dirname {} \\; | sort
+            '''
         }
+    }
+}
         
         stage('SonarQube Analysis') {
             steps {
