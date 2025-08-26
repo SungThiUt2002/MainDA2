@@ -19,7 +19,7 @@ pipeline {
                     java -version
                     
                     echo "=== Maven Test with explicit JAVA_HOME ==="
-                    mvn -version
+                    JAVA_HOME=$JAVA_HOME mvn -version
                     
                     echo "=== Project Structure ==="
                     find . -maxdepth 2 -name "pom.xml" -exec dirname {} \\; | sort
