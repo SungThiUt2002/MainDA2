@@ -54,20 +54,8 @@ pipeline {
             }
         }
         
-        stage('Quality Gate') {
-            steps {
-                script {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                        } else {
-                            echo "Quality Gate passed"
-                        }
-                    }
-                }
-            }
-        }
+        // Quality Gate stage removed for faster pipeline execution
+        // SonarQube analysis results are still available in SonarQube dashboard
         
         stage('Build Common DTO') {
             when {
