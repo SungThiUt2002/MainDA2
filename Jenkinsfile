@@ -26,7 +26,38 @@ pipeline {
                 '''
            }
       }
-        
+        stage('Build and Run Core Services') {
+            steps {
+                script {
+                    echo "=== Building Core Services ==="
+                    // Build Discovery Service trước
+                    dir('discoveryservice') {
+                        sh 'mvn clean package -DskipTests=true'
+                    }
+                    
+                    // Build Config Server
+                    dir('config-server') {
+                        sh 'mvn clean package -DskipTests=true'
+                    }
+                    
+                    echo "=== Starting Core Services in Background ==="
+                    // Chạy Discovery Service trong nền
+                    dir('discoveryservice') {
+                        // Dùng nohup và & để chạy nền và không làm pipeline bị treo
+                        sh 'nohup java -jar target/discoveryservice-*.jar &'
+                    }
+
+                    // Chạy Config Server trong nền
+                    dir('config-server') {
+                        sh 'nohup java -jar target/config-server-*.jar &'
+                    }
+                    
+                    echo "Waiting for Core Services to start up..."
+                    // Đợi 30 giây để đảm bảo 2 service trên đã khởi động xong
+                    sleep 30
+                }
+            }
+        }
         stage('SonarQube Analysis') {
             steps {
                 script {
@@ -100,40 +131,6 @@ pipeline {
                     steps {
                         script {
                             def serviceDir = fileExists('Cart-Service') ? 'Cart-Service' : 'cart-service'
-                            dir(serviceDir) {
-                                sh 'mvn clean package -DskipTests=true'
-                            }
-                        }
-                    }
-                }
-                
-                stage('Config Server') {
-                    when {
-                        anyOf {
-                            expression { fileExists('Config-Server') }
-                            expression { fileExists('config-server') }
-                        }
-                    }
-                    steps {
-                        script {
-                            def serviceDir = fileExists('Config-Server') ? 'Config-Server' : 'config-server'
-                            dir(serviceDir) {
-                                sh 'mvn clean package -DskipTests=true'
-                            }
-                        }
-                    }
-                }
-                
-                stage('Discovery Service') {
-                    when {
-                        anyOf {
-                            expression { fileExists('Discovery-Service') }
-                            expression { fileExists('discoveryservice') }
-                        }
-                    }
-                    steps {
-                        script {
-                            def serviceDir = fileExists('Discovery-Service') ? 'Discovery-Service' : 'discoveryservice'
                             dir(serviceDir) {
                                 sh 'mvn clean package -DskipTests=true'
                             }
@@ -253,6 +250,11 @@ pipeline {
     post {
         always {
             script {
+                echo "=== Cleaning up background processes ==="
+                // Dừng các tiến trình java đã chạy nền
+                // || true để không làm pipeline thất bại nếu không tìm thấy tiến trình
+                sh 'pkill -f "discoveryservice-.*.jar" || true'
+                sh 'pkill -f "config-server-.*.jar" || true'            
                 try {
                     archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
                 } catch (Exception e) {
