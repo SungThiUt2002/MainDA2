@@ -15,7 +15,6 @@ pipeline {
             steps {
                 sh '''
                     echo "=== Build Environment ==="
-                    export JAVA_HOME=/var/jenkins_home/tools/hudson.model.JDK/Java21/jdk-21.0.8+9
                     echo "JAVA_HOME: $JAVA_HOME"
                     java -version
                     
@@ -33,7 +32,6 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
                         echo "=== Running SonarQube Analysis ==="
-                        export JAVA_HOME=/var/jenkins_home/tools/hudson.model.JDK/Java21/jdk-21.0.8+9
                         echo "Using JAVA_HOME: $JAVA_HOME"
                         mvn clean verify sonar:sonar \
                             -Dsonar.projectKey=microservices-project \
@@ -68,7 +66,7 @@ pipeline {
             steps {
                 dir('common-dto') {
                     echo 'Building common-dto...'
-                    sh 'JAVA_HOME=$JAVA_HOME mvn clean install -DskipTests=true'
+                    sh 'mvn clean install -DskipTests=true'
                 }
             }
         }
@@ -86,7 +84,7 @@ pipeline {
                         script {
                             def serviceDir = fileExists('Account-Service') ? 'Account-Service' : 'account-service'
                             dir(serviceDir) {
-                                sh 'JAVA_HOME=$JAVA_HOME mvn clean package -DskipTests=true'
+                                sh 'mvn clean package -DskipTests=true'
                             }
                         }
                     }
@@ -190,7 +188,7 @@ pipeline {
                         if (dir && dir != '.' && dir != './common-dto') {
                             dir(dir) {
                                 echo "Testing ${dir}..."
-                                sh 'JAVA_HOME=$JAVA_HOME mvn test || true'
+                                sh 'mvn test || true'
                             }
                         }
                     }
