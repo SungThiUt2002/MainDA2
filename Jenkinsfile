@@ -1,5 +1,13 @@
 pipeline {
-    agent any
+    agent {
+    // Yêu cầu Jenkins chạy các bước trong một container Docker
+    docker {
+        // Sử dụng một image có cài sẵn cả docker và docker-compose
+        image 'docker/compose:1.29.2' 
+        // Cho phép container này điều khiển Docker trên máy chủ Jenkins
+        args '-v /var/run/docker.sock:/var/run/docker.sock' 
+    }
+}
     
     tools {
         maven 'Maven'
