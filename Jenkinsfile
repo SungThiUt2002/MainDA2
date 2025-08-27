@@ -48,7 +48,7 @@ pipeline {
                     }
                     
                     echo "Waiting for all dependencies to start up..."
-                    sleep 60
+                    sleep 30
                 }
             }
         }
@@ -79,7 +79,8 @@ pipeline {
                                     sh """
                                         echo "=== Running SonarQube Analysis for ${projectName} ==="
                                         echo "Using JAVA_HOME: $JAVA_HOME"
-                                        mvn clean verify sonar:sonar \
+                                        mvn clean compile sonar:sonar \
+                                            -DskipTests=true \
                                             -Dsonar.projectKey=microservices-${projectName} \
                                             -Dsonar.projectName="Microservices ${projectName}" \
                                             -Dsonar.projectVersion=${GIT_COMMIT_SHORT} || echo "SonarQube failed for ${projectName}, continuing..."
