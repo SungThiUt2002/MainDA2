@@ -26,35 +26,32 @@ pipeline {
                 '''
            }
       }
-        stage('Build and Run Core Services') {
+        stage('Start Dependencies') {
             steps {
                 script {
-                    echo "=== Building Core Services ==="
-                    // Build Discovery Service trước
-                    dir('discoveryservice') {
-                        sh 'mvn clean package -DskipTests=true'
-                    }
-                    
-                    // Build Config Server
-                    dir('config-server') {
-                        sh 'mvn clean package -DskipTests=true'
-                    }
-                    
-                    echo "=== Starting Core Services in Background ==="
-                    // Chạy Discovery Service trong nền
-                    dir('discoveryservice') {
-                        // Dùng nohup và & để chạy nền và không làm pipeline bị treo
-                        sh 'nohup java -jar target/discoveryservice-*.jar &'
-                    }
+                    echo "=== Starting Infrastructure via Docker Compose ==="
+                    // BƯỚC 1: Dùng Docker Compose để chạy MySQL và Kafka
+                    sh 'docker-compose up -d'
 
-                    // Chạy Config Server trong nền
-                    dir('config-server') {
-                        sh 'nohup java -jar target/config-server-*.jar &'
+                    echo "=== Building and Starting Core Services ==="
+                    // BƯỚC 2: Build và chạy Discovery, Config Server
+                    dir('discoveryservice') { 
+                        sh 'mvn clean package -DskipTests=true' 
+                    }
+                    dir('config-server') { 
+                        sh 'mvn clean package -DskipTests=true' 
                     }
                     
-                    echo "Waiting for Core Services to start up..."
-                    // Đợi 30 giây để đảm bảo 2 service trên đã khởi động xong
-                    sleep 30
+                    dir('discoveryservice') { 
+                        sh 'nohup java -jar target/discoveryservice-*.jar &' 
+                    }
+                    dir('config-server') { 
+                        sh 'nohup java -jar target/config-server-*.jar &' 
+                    }
+                    
+                    echo "Waiting for all dependencies to start up..."
+                    // Tăng thời gian chờ lên 60 giây để đảm bảo tất cả đều sẵn sàng
+                    sleep 60
                 }
             }
         }
@@ -250,11 +247,14 @@ pipeline {
     post {
         always {
             script {
-                echo "=== Cleaning up background processes ==="
+                echo "=== Cleaning up environment ==="
+                
                 // Dừng các tiến trình java đã chạy nền
-                // || true để không làm pipeline thất bại nếu không tìm thấy tiến trình
                 sh 'pkill -f "discoveryservice-.*.jar" || true'
-                sh 'pkill -f "config-server-.*.jar" || true'            
+                sh 'pkill -f "config-server-.*.jar" || true'
+                
+                // Dừng và xóa các container hạ tầng đã chạy
+                sh 'docker-compose down -v || true'           
                 try {
                     archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
                 } catch (Exception e) {
