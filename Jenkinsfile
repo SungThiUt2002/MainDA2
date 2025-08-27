@@ -30,7 +30,7 @@ pipeline {
             steps {
                 script {
                     echo "=== Starting Infrastructure via Docker Compose ==="
-                    sh 'docker-compose up -d'
+                    sh 'docker compose up -d'
 
                     echo "=== Building and Starting Core Services ==="
                     dir('discoveryservice') { 
@@ -232,10 +232,10 @@ pipeline {
             steps {
                 sh '''
                     echo "Stopping existing containers..."
-                    docker-compose down || true
+                    docker compose down || true
                     
                     echo "Starting services..."
-                    docker-compose up -d
+                    docker compose up -d
                     
                     echo "Service status:"
                     docker ps
@@ -252,7 +252,7 @@ pipeline {
                     
                     sh 'pkill -f "discoveryservice-.*.jar" || true'
                     sh 'pkill -f "config-server-.*.jar" || true'
-                    sh 'docker-compose down -v || true'
+                    sh 'docker compose down -v || true'
                     
                     try {
                         archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
