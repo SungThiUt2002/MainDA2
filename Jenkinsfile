@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent any  // Thay vì dùng Docker agent
     
     tools {
         maven 'Maven'
@@ -30,11 +30,9 @@ pipeline {
             steps {
                 script {
                     echo "=== Starting Infrastructure via Docker Compose ==="
-                    // BƯỚC 1: Dùng Docker Compose để chạy MySQL và Kafka
                     sh 'docker-compose up -d'
 
                     echo "=== Building and Starting Core Services ==="
-                    // BƯỚC 2: Build và chạy Discovery, Config Server
                     dir('discoveryservice') { 
                         sh 'mvn clean package -DskipTests=true' 
                     }
@@ -50,15 +48,27 @@ pipeline {
                     }
                     
                     echo "Waiting for all dependencies to start up..."
-                    // Tăng thời gian chờ lên 60 giây để đảm bảo tất cả đều sẵn sàng
                     sleep 60
                 }
             }
         }
+        stage('Build Common DTO') {
+            when {
+                expression { 
+                    return sh(script: "find . -name 'common-dto' -type d", returnStdout: true).trim() != ""
+                }
+            }
+            steps {
+                dir('common-dto') {
+                    echo 'Building common-dto...'
+                    sh 'mvn clean install -DskipTests=true'
+                }
+            }
+        }
+        
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    // Find all directories with pom.xml and run sonar analysis
                     def pomDirs = sh(script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
                     
                     pomDirs.each { pomDir ->
@@ -78,23 +88,6 @@ pipeline {
                             }
                         }
                     }
-                }
-            }
-        }
-        
-        // Quality Gate stage removed for faster pipeline execution
-        // SonarQube analysis results are still available in SonarQube dashboard
-        
-        stage('Build Common DTO') {
-            when {
-                expression { 
-                    return sh(script: "find . -name 'common-dto' -type d", returnStdout: true).trim() != ""
-                }
-            }
-            steps {
-                dir('common-dto') {
-                    echo 'Building common-dto...'
-                    sh 'mvn clean install -DskipTests=true'
                 }
             }
         }
@@ -246,19 +239,19 @@ pipeline {
     
     post {
         always {
-            script {
-                echo "=== Cleaning up environment ==="
-                
-                // Dừng các tiến trình java đã chạy nền
-                sh 'pkill -f "discoveryservice-.*.jar" || true'
-                sh 'pkill -f "config-server-.*.jar" || true'
-                
-                // Dừng và xóa các container hạ tầng đã chạy
-                sh 'docker-compose down -v || true'           
-                try {
-                    archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
-                } catch (Exception e) {
-                    echo "No JAR files to archive"
+            node('') {  // Wrap trong node context
+                script {
+                    echo "=== Cleaning up environment ==="
+                    
+                    sh 'pkill -f "discoveryservice-.*.jar" || true'
+                    sh 'pkill -f "config-server-.*.jar" || true'
+                    sh 'docker-compose down -v || true'
+                    
+                    try {
+                        archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
+                    } catch (Exception e) {
+                        echo "No JAR files to archive"
+                    }
                 }
             }
         }
@@ -269,7 +262,9 @@ pipeline {
             echo 'Pipeline failed!'
         }
         cleanup {
-            cleanWs()
+            node('') {  // Wrap cleanWs trong node context
+                cleanWs()
+            }
         }
     }
 }
