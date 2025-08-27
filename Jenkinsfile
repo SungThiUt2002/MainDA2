@@ -149,17 +149,23 @@ pipeline {
                 stage('Other Services') {
                     steps {
                         script {
-                            def otherServices = ['Inventory-Service', 'inventory-service', 
-                                               'Order-Service', 'order-service', 
-                                               'Shop-Service', 'shop']
+                            // Chỉ build backend services (Maven projects)
+                            def backendServices = ['Inventory-Service', 'inventory-service', 
+                                                 'Order-Service', 'order-service', 
+                                                 'Shop-Service']
                             
-                            otherServices.each { service ->
-                                if (fileExists(service)) {
+                            backendServices.each { service ->
+                                if (fileExists(service) && fileExists("${service}/pom.xml")) {
                                     dir(service) {
-                                        echo "Building ${service}..."
+                                        echo "Building backend service: ${service}..."
                                         sh 'mvn clean package -DskipTests=true'
                                     }
                                 }
+                            }
+                            
+                            // Skip frontend - để riêng pipeline khác
+                            if (fileExists('shop') && !fileExists('shop/pom.xml')) {
+                                echo "Found frontend directory 'shop' - skipping (not a Maven project)"
                             }
                         }
                     }
