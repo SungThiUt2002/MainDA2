@@ -173,15 +173,15 @@ pipeline {
             }
         }
         
-        stage('Run Tests') {
+       stage('Run Tests') {
             steps {
                 script {
                     def pomDirs = sh(script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
                     
-                    pomDirs.each { dir ->
-                        if (dir && dir != '.' && dir != './common-dto') {
-                            dir(dir) {
-                                echo "Testing ${dir}..."
+                    pomDirs.each { dirPath ->
+                        if (dirPath && dirPath != '.' && dirPath != './common-dto' && fileExists("${dirPath}/pom.xml")) {
+                            dir(dirPath) {
+                                echo "Testing ${dirPath}..."
                                 sh 'mvn test || true'
                             }
                         }
