@@ -1,8 +1,13 @@
 version: '3.8'
 name: microservices-stack
 
+# ĐỊNH NGHĨA MỘT MẠNG CHUNG ĐỂ CÁC CONTAINER GIAO TIẾP
+networks:
+  app-network:
+    driver: bridge
+
 services:
-  # --- Cụm Kafka ---
+  # --- Cụm Kafka (Giữ nguyên cấu trúc 3 node của bạn) ---
   kafka1:
     image: bitnami/kafka:latest
     container_name: kafka1
@@ -21,12 +26,16 @@ services:
       ALLOW_PLAINTEXT_LISTENER: "yes"
     volumes:
       - kafka1_data:/bitnami/kafka
+    # THÊM VÀO: Kết nối service vào mạng chung
+    networks:
+      - app-network
 
   kafka2:
     image: bitnami/kafka:latest
     container_name: kafka2
     ports:
-      - "9093:9093"
+      # Cổng controller nội bộ, không cần expose ra ngoài host
+      # - "9093:9093" 
       - "19093:19093"
     environment:
       KAFKA_CFG_NODE_ID: 2
@@ -40,12 +49,16 @@ services:
       ALLOW_PLAINTEXT_LISTENER: "yes"
     volumes:
       - kafka2_data:/bitnami/kafka
+    # THÊM VÀO: Kết nối service vào mạng chung
+    networks:
+      - app-network
 
   kafka3:
     image: bitnami/kafka:latest
     container_name: kafka3
     ports:
-      - "9094:9094"
+      # Cổng controller nội bộ, không cần expose ra ngoài host
+      # - "9094:9094"
       - "19094:19094"
     environment:
       KAFKA_CFG_NODE_ID: 3
@@ -59,6 +72,9 @@ services:
       ALLOW_PLAINTEXT_LISTENER: "yes"
     volumes:
       - kafka3_data:/bitnami/kafka
+    # THÊM VÀO: Kết nối service vào mạng chung
+    networks:
+      - app-network
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -70,27 +86,29 @@ services:
       - kafka2
       - kafka3
     environment:
-      KAFKA_CLUSTERS_0_NAME: kafka-cluster
+      KAFKA_CLUSTERS_0_NAME: local-kafka-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:9092,kafka2:9092,kafka3:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: ""
+    # THÊM VÀO: Kết nối service vào mạng chung
+    networks:
+      - app-network
 
   # --- Database ---
   mysql:
     image: mysql:8.0
-    container_name: mysql-container
+    container_name: mysql-db # Đổi tên để không bị trùng với "mysql" là tên service
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: yourpassword # Nên đổi mật khẩu này
     volumes:
       - mysql_data:/var/lib/mysql
-    restart: "no"
+    # THÊM VÀO: Kết nối service vào mạng chung
+    networks:
+      - app-network
 
 volumes:
   kafka1_data:
   kafka2_data:
   kafka3_data:
   mysql_data:
-
-#  docker-compose down -v
-#  docker-compose up -d
