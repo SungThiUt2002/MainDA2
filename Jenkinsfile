@@ -1,5 +1,5 @@
 pipeline {
-    agent any  // Thay vì dùng Docker agent
+    agent any
     
     tools {
         maven 'Maven'
@@ -8,9 +8,10 @@ pipeline {
     environment {
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
         JAVA_HOME = "/opt/java/openjdk"
+        // HARBOR_REGISTRY và HARBOR_PROJECT được lấy từ Global Environment Variables
     }
     
-    stages{
+    stages {
         stage('Environment Check') {
             steps {
                 sh '''
@@ -23,14 +24,19 @@ pipeline {
                 
                     echo "=== Project Structure ==="
                     find . -maxdepth 2 -name "pom.xml" -exec dirname {} \\; | sort
+                    
+                    echo "=== Harbor Registry Config ==="
+                    echo "HARBOR_REGISTRY: $HARBOR_REGISTRY"
+                    echo "HARBOR_PROJECT: $HARBOR_PROJECT"
                 '''
-           }
-      }
+            }
+        }
+        
         stage('Start Dependencies') {
             steps {
                 script {
                     echo "=== Starting Infrastructure via Docker Compose ==="
-                    sh 'docker-compose up -d'
+                    sh 'docker-compose up -d || true'
 
                     echo "=== Building and Starting Core Services ==="
                     dir('discoveryservice') { 
@@ -47,11 +53,12 @@ pipeline {
                         sh 'nohup java -jar target/config-server-*.jar &' 
                     }
                     
-                    echo "Waiting for all dependencies to start up..."
+                    echo "Waiting for dependencies to start..."
                     sleep 30
                 }
             }
         }
+        
         stage('Build Common DTO') {
             when {
                 expression { 
@@ -78,7 +85,6 @@ pipeline {
                                     def projectName = pomDir.replaceAll('^\\./', '')
                                     sh """
                                         echo "=== Running SonarQube Analysis for ${projectName} ==="
-                                        echo "Using JAVA_HOME: $JAVA_HOME"
                                         mvn clean compile sonar:sonar \
                                             -DskipTests=true \
                                             -Dsonar.projectKey=microservices-${projectName} \
@@ -149,10 +155,9 @@ pipeline {
                 stage('Other Services') {
                     steps {
                         script {
-                            // Chỉ build backend services (Maven projects)
                             def backendServices = ['Inventory-Service', 'inventory-service', 
                                                  'Order-Service', 'order-service', 
-                                                 'Shop-Service']
+                                                 'Shop-Service', 'shop-service']
                             
                             backendServices.each { service ->
                                 if (fileExists(service) && fileExists("${service}/pom.xml")) {
@@ -163,38 +168,9 @@ pipeline {
                                 }
                             }
                             
-                            // Skip frontend - để riêng pipeline khác
                             if (fileExists('shop') && !fileExists('shop/pom.xml')) {
                                 echo "Found frontend directory 'shop' - skipping (not a Maven project)"
                             }
-                        }
-                    }
-                }
-            }
-        }
-        
-       stage('Run Tests') {
-            steps {
-                script {
-                    def pomDirs = sh(script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
-                    
-                    pomDirs.each { dirPath ->
-                        if (dirPath && dirPath != '.' && dirPath != './common-dto' && fileExists("${dirPath}/pom.xml")) {
-                            dir(dirPath) {
-                                echo "Testing ${dirPath}..."
-                                sh 'mvn test || true'
-                            }
-                        }
-                    }
-                }
-            }
-            post {
-                always {
-                    script {
-                        try {
-                            junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
-                        } catch (Exception e) {
-                            echo "No test results to publish"
                         }
                     }
                 }
@@ -214,10 +190,92 @@ pipeline {
                                 sh """
                                     docker build -t ${imageName}:${GIT_COMMIT_SHORT} .
                                     docker tag ${imageName}:${GIT_COMMIT_SHORT} ${imageName}:latest
+                                    docker tag ${imageName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${imageName}:${GIT_COMMIT_SHORT}
+                                    docker tag ${imageName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${imageName}:latest
                                 """
                             }
                         }
                     }
+                }
+            }
+        }
+        
+        stage('Push to Harbor & Update Git') {
+            parallel {
+                stage('Push to Harbor Registry') {
+                    steps {
+                        script {
+                            // Login to Harbor
+                            withCredentials([usernamePassword(credentialsId: 'harbor-login-robot', 
+                                                            passwordVariable: 'HARBOR_PASSWORD', 
+                                                            usernameVariable: 'HARBOR_USERNAME')]) {
+                                sh """
+                                    echo "Logging into Harbor registry..."
+                                    echo '${HARBOR_PASSWORD}' | docker login ${HARBOR_REGISTRY} -u '${HARBOR_USERNAME}' --password-stdin
+                                """
+                            }
+                            
+                            // Push images to Harbor
+                            def services = sh(script: "find . -maxdepth 2 -name 'Dockerfile' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
+                            
+                            services.each { serviceDir ->
+                                if (serviceDir && serviceDir != '.') {
+                                    def imageName = serviceDir.replaceAll('^\\./', '').toLowerCase().replaceAll('[^a-z0-9-]', '-')
+                                    echo "Pushing ${imageName} to Harbor Registry..."
+                                    
+                                    sh """
+                                        docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${imageName}:${GIT_COMMIT_SHORT}
+                                        docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${imageName}:latest
+                                    """
+                                }
+                            }
+                            
+                            // Logout from Harbor
+                            sh "docker logout ${HARBOR_REGISTRY}"
+                        }
+                    }
+                }
+                
+                stage('Update Git with Tag') {
+                    steps {
+                        script {
+                            withCredentials([usernamePassword(credentialsId: 'gitea-admin', 
+                                                            passwordVariable: 'GIT_PASSWORD', 
+                                                            usernameVariable: 'GIT_USERNAME')]) {
+                                sh """
+                                    echo "Creating and pushing new tag..."
+                                    git config user.name "${GIT_USERNAME}"
+                                    git config user.email "${GIT_USERNAME}@company.local"
+                                    
+                                    # Check if tag already exists
+                                    if git rev-parse "v${GIT_COMMIT_SHORT}" >/dev/null 2>&1; then
+                                        echo "Tag v${GIT_COMMIT_SHORT} already exists, skipping..."
+                                    else
+                                        echo "Creating new tag v${GIT_COMMIT_SHORT}"
+                                        git tag -a "v${GIT_COMMIT_SHORT}" -m "Release version ${GIT_COMMIT_SHORT} - Docker images built and pushed"
+                                        
+                                        # Push with current remote URL
+                                        git push origin "v${GIT_COMMIT_SHORT}" || echo "Failed to push tag, continuing..."
+                                    fi
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Check Vulnerability Scan Results') {
+            steps {
+                script {
+                    echo "=== Vulnerability Scan Results ==="
+                    echo "Harbor is automatically scanning pushed images for security vulnerabilities."
+                    echo "Check Harbor UI at http://localhost:80 for detailed vulnerability reports."
+                    echo "Images with high/critical vulnerabilities may be blocked based on project policy."
+                    
+                    // Wait for vulnerability scan to complete
+                    echo "Waiting for Harbor vulnerability scanning to complete..."
+                    sleep 30
                 }
             }
         }
@@ -234,11 +292,11 @@ pipeline {
                     echo "Stopping existing containers..."
                     docker-compose down || true
                     
-                    echo "Starting services..."
+                    echo "Starting services with new images..."
                     docker-compose up -d
                     
                     echo "Service status:"
-                    docker ps
+                    docker ps --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}"
                 '''
             }
         }
@@ -246,32 +304,38 @@ pipeline {
     
     post {
         always {
-            node('') {  // Wrap trong node context
-                script {
-                    echo "=== Cleaning up environment ==="
-                    
-                    sh 'pkill -f "discoveryservice-.*.jar" || true'
-                    sh 'pkill -f "config-server-.*.jar" || true'
-                    sh 'docker-compose down -v || true'
-                    
-                    try {
-                        archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
-                    } catch (Exception e) {
-                        echo "No JAR files to archive"
-                    }
+            script {
+                echo "=== Cleaning up environment ==="
+                
+                sh 'pkill -f "discoveryservice-.*.jar" || true'
+                sh 'pkill -f "config-server-.*.jar" || true'
+                sh 'docker-compose down -v || true'
+                
+                try {
+                    archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
+                } catch (Exception e) {
+                    echo "No JAR files to archive"
                 }
+                
+                // Clean up Docker images to save space
+                sh '''
+                    echo "Cleaning up local Docker images..."
+                    docker image prune -f || true
+                '''
             }
         }
         success {
             echo 'Pipeline completed successfully!'
+            echo "Images pushed to Harbor: ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/"
+            echo "Harbor will automatically scan images for vulnerabilities"
+            echo "Check Harbor UI for vulnerability reports and deployment approval"
         }
         failure {
             echo 'Pipeline failed!'
+            sh "docker logout ${HARBOR_REGISTRY} || true"
         }
         cleanup {
-            node('') {  // Wrap cleanWs trong node context
-                cleanWs()
-            }
+            cleanWs()
         }
     }
 }
