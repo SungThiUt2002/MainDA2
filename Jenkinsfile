@@ -188,12 +188,25 @@ pipeline {
                             dir(serviceDir) {
                                 def imageName = serviceDir.replaceAll('^\\./', '').toLowerCase().replaceAll('[^a-z0-9-]', '-')
                                 echo "Building Docker image: ${imageName}"
-                                sh """
-                                    docker build -t ${imageName}:${GIT_COMMIT_SHORT} .
-                                    docker tag ${imageName}:${GIT_COMMIT_SHORT} ${imageName}:latest
-                                    docker tag ${imageName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${imageName}:${GIT_COMMIT_SHORT}
-                                    docker tag ${imageName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${imageName}:latest
-                                """
+                                echo "Current directory: ${pwd()}"
+                                echo "Directory contents:"
+                                sh 'ls -la'
+                                
+                                try {
+                                    sh """
+                                        echo "Dockerfile content:"
+                                        cat Dockerfile
+                                        
+                                        echo "Starting Docker build..."
+                                        docker build -t ${imageName}:${GIT_COMMIT_SHORT} .
+                                        docker tag ${imageName}:${GIT_COMMIT_SHORT} ${imageName}:latest
+                                        docker tag ${imageName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${imageName}:${GIT_COMMIT_SHORT}
+                                        docker tag ${imageName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${imageName}:latest
+                                    """
+                                } catch (Exception e) {
+                                    echo "Failed to build ${imageName}: ${e.getMessage()}"
+                                    echo "Continuing with other services..."
+                                }
                             }
                         }
                     }
