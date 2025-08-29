@@ -8,7 +8,8 @@ pipeline {
     environment {
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
         JAVA_HOME = "/opt/java/openjdk"
-        // HARBOR_REGISTRY và HARBOR_PROJECT được lấy từ Global Environment Variables
+        HARBOR_REGISTRY = "localhost:80"
+        HARBOR_PROJECT = "doan_devsecops"
     }
     
     stages {
