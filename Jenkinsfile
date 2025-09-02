@@ -280,8 +280,8 @@ EOF"""
                         script {
                             sh """
                                 echo "Creating Git tag..."
-                                git config user.name "jenkins-ci"
-                                git config user.email "jenkins@company.local"
+                                git config user.name "Jenkins CI"
+                                git config user.email "jenkins@localhost"
                                 
                                 if git rev-parse "v${GIT_COMMIT_SHORT}" >/dev/null 2>&1; then
                                     echo "Tag v${GIT_COMMIT_SHORT} already exists"
