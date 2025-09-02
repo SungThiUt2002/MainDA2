@@ -29,6 +29,9 @@ pipeline {
                     echo "=== Harbor Registry Config ==="
                     echo "HARBOR_REGISTRY: $HARBOR_REGISTRY"
                     echo "HARBOR_PROJECT: $HARBOR_PROJECT"
+                    
+                    echo "=== Docker Version ==="
+                    docker --version
                 '''
             }
         }
@@ -87,7 +90,10 @@ pipeline {
                         script {
                             def serviceDir = fileExists('Account-Service') ? 'Account-Service' : 'account-service'
                             dir(serviceDir) {
+                                echo "Building ${serviceDir}..."
                                 sh 'mvn clean package -DskipTests=true'
+                                echo "JAR files created:"
+                                sh 'ls -la target/*.jar'
                             }
                         }
                     }
@@ -104,7 +110,10 @@ pipeline {
                         script {
                             def serviceDir = fileExists('Cart-Service') ? 'Cart-Service' : 'cart-service'
                             dir(serviceDir) {
+                                echo "Building ${serviceDir}..."
                                 sh 'mvn clean package -DskipTests=true'
+                                echo "JAR files created:"
+                                sh 'ls -la target/*.jar'
                             }
                         }
                     }
@@ -121,7 +130,10 @@ pipeline {
                         script {
                             def serviceDir = fileExists('Product-Service') ? 'Product-Service' : 'product-service'
                             dir(serviceDir) {
+                                echo "Building ${serviceDir}..."
                                 sh 'mvn clean package -DskipTests=true'
+                                echo "JAR files created:"
+                                sh 'ls -la target/*.jar'
                             }
                         }
                     }
@@ -139,6 +151,8 @@ pipeline {
                                     dir(service) {
                                         echo "Building backend service: ${service}..."
                                         sh 'mvn clean package -DskipTests=true'
+                                        echo "JAR files created:"
+                                        sh 'ls -la target/*.jar'
                                     }
                                 }
                             }
@@ -174,7 +188,7 @@ pipeline {
             }
         }
         
-        stage('Đóng gói ứng dụng bằng Docker và push lên registry') {
+        stage('Đóng gói ứng dụng bằng Docker') {
             parallel {
                 stage('Build Docker Images') {
                     steps {
@@ -186,40 +200,74 @@ pipeline {
                             services.each { service ->
                                 if (fileExists(service) && fileExists("${service}/target")) {
                                     def serviceName = service.toLowerCase().replaceAll('[^a-z0-9-]', '-')
-                                    echo "Building Docker image for: ${serviceName}"
+                                    echo "=== Building Docker image for: ${serviceName} ==="
                                     
                                     dir(service) {
-                                        sh """
-                                            echo "=== Service: ${serviceName} ==="
+                                        // Check JAR files first
+                                        echo "Checking target directory:"
+                                        sh 'ls -la target/'
+                                        
+                                        // Get exact JAR filename
+                                        def jarFile = sh(script: 'ls target/*.jar | head -1 | xargs basename', returnStdout: true).trim()
+                                        echo "JAR file found: ${jarFile}"
+                                        
+                                        // Create optimized Dockerfile
+                                        if (fileExists('Dockerfile')) {
+                                            echo "Found existing Dockerfile, checking content..."
+                                            sh 'cat Dockerfile'
                                             
-                                            if [ -f Dockerfile ]; then
-                                                echo "Found existing Dockerfile, checking if it's commented out..."
+                                            // Fix commented Dockerfiles
+                                            sh '''
                                                 if grep -q "^#FROM" Dockerfile; then
-                                                    echo "Dockerfile is commented out, uncommenting..."
+                                                    echo "Uncommenting Dockerfile..."
                                                     sed 's/^#//g' Dockerfile > Dockerfile.tmp && mv Dockerfile.tmp Dockerfile
                                                 fi
-                                            else
-                                                echo "Creating new Dockerfile for ${serviceName}..."
-                                                cat > Dockerfile << 'EOF'
-FROM openjdk:17-jre-slim
+                                            '''
+                                        } else {
+                                            echo "Creating Dockerfile for ${serviceName}..."
+                                            sh """
+cat > Dockerfile << 'EOF'
+FROM openjdk:21-jre-slim
+
 WORKDIR /app
-COPY target/*.jar app.jar
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Copy JAR file
+COPY target/${jarFile} app.jar
+
+# Set ownership
+RUN chown appuser:appuser app.jar
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
 EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \\
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+# Run application
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
-EOF
-                                            fi
-                                            
-                                            echo "Building Docker image..."
-                                            docker build -t ${serviceName}:${GIT_COMMIT_SHORT} . || {
-                                                echo "Docker build failed for ${serviceName}, skipping..."
-                                                exit 0
-                                            }
-                                            
+EOF"""
+                                        }
+                                        
+                                        echo "Final Dockerfile content:"
+                                        sh 'cat Dockerfile'
+                                        
+                                        echo "Building Docker image..."
+                                        sh """
+                                            docker build -t ${serviceName}:${GIT_COMMIT_SHORT} .
                                             docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${serviceName}:latest
                                             docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${GIT_COMMIT_SHORT}
                                             docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest
-                                            echo "Tagged ${serviceName} successfully"
                                         """
+                                        
+                                        echo "Image built and tagged successfully for ${serviceName}"
+                                        sh "docker images | grep ${serviceName}"
                                     }
                                 }
                             }
@@ -227,21 +275,19 @@ EOF
                     }
                 }
                 
-                stage('Cập nhật tag mới và commit lên git') {
+                stage('Cập nhật tag và commit lên git') {
                     steps {
                         script {
                             sh """
-                                echo "Creating and pushing new tag..."
+                                echo "Creating Git tag..."
                                 git config user.name "jenkins-ci"
                                 git config user.email "jenkins@company.local"
                                 
-                                # Check if tag already exists
                                 if git rev-parse "v${GIT_COMMIT_SHORT}" >/dev/null 2>&1; then
-                                    echo "Tag v${GIT_COMMIT_SHORT} already exists, skipping..."
+                                    echo "Tag v${GIT_COMMIT_SHORT} already exists"
                                 else
-                                    echo "Creating new tag v${GIT_COMMIT_SHORT}"
-                                    git tag -a "v${GIT_COMMIT_SHORT}" -m "Release version ${GIT_COMMIT_SHORT} - Docker images built"
-                                    echo "Tag v${GIT_COMMIT_SHORT} created successfully"
+                                    git tag -a "v${GIT_COMMIT_SHORT}" -m "Release version ${GIT_COMMIT_SHORT}"
+                                    echo "Tag v${GIT_COMMIT_SHORT} created"
                                 fi
                             """
                         }
@@ -250,7 +296,7 @@ EOF
             }
         }
         
-        stage('Push image') {
+        stage('Push image lên Harbor') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'harbor-login-robot', 
@@ -258,7 +304,7 @@ EOF
                                                     usernameVariable: 'HARBOR_USERNAME')]) {
                         sh """
                             echo "Logging into Harbor registry..."
-                            echo '${HARBOR_PASSWORD}' | docker login ${HARBOR_REGISTRY} -u '${HARBOR_USERNAME}' --password-stdin
+                            echo "\${HARBOR_PASSWORD}" | docker login ${HARBOR_REGISTRY} -u "\${HARBOR_USERNAME}" --password-stdin
                         """
                     }
                     
@@ -266,51 +312,60 @@ EOF
                                   'Product-Service', 'product-service', 'Inventory-Service', 'inventory-service',
                                   'Order-Service', 'order-service', 'Shop-Service', 'shop-service']
                     
+                    def pushedImages = []
                     services.each { service ->
                         if (fileExists(service) && fileExists("${service}/target")) {
                             def serviceName = service.toLowerCase().replaceAll('[^a-z0-9-]', '-')
                             
-                            // Check if image exists before pushing
+                            // Verify image exists before pushing
                             def imageExists = sh(script: "docker images -q ${serviceName}:${GIT_COMMIT_SHORT}", returnStdout: true).trim()
                             if (imageExists) {
-                                echo "Pushing ${serviceName} to Harbor Registry..."
+                                echo "Pushing ${serviceName} to Harbor..."
                                 sh """
-                                    docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${GIT_COMMIT_SHORT} || echo "Push failed for ${serviceName}:${GIT_COMMIT_SHORT}"
-                                    docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest || echo "Push failed for ${serviceName}:latest"
+                                    docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${GIT_COMMIT_SHORT}
+                                    docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest
                                 """
+                                pushedImages.add(serviceName)
+                                echo "Successfully pushed ${serviceName}"
                             } else {
-                                echo "Image ${serviceName}:${GIT_COMMIT_SHORT} not found, skipping push..."
+                                error("Image ${serviceName}:${GIT_COMMIT_SHORT} not found!")
                             }
                         }
                     }
                     
                     sh "docker logout ${HARBOR_REGISTRY}"
+                    
+                    echo "=== Push Summary ==="
+                    echo "Successfully pushed ${pushedImages.size()} images:"
+                    pushedImages.each { img ->
+                        echo "✓ ${img}"
+                    }
                 }
             }
         }
         
-        stage('Quét image') {
+        stage('Quét image với Trivy') {
             steps {
                 script {
                     echo "=== Harbor Vulnerability Scanning with Trivy ==="
-                    echo "Harbor is automatically scanning pushed images for security vulnerabilities using Trivy scanner."
-                    echo "Trivy will scan for:"
-                    echo "- OS vulnerabilities (CVEs in base images)"
-                    echo "- Application dependencies vulnerabilities"
-                    echo "- Security misconfigurations"
+                    echo "Trivy scanner is automatically analyzing pushed images..."
                     echo ""
-                    echo "Check Harbor UI at http://localhost:80 for detailed vulnerability reports."
-                    echo "Navigate to: Projects → ${HARBOR_PROJECT} → Repositories → Select image → Vulnerabilities tab"
+                    echo "Scanning for:"
+                    echo "• OS vulnerabilities (CVEs)"
+                    echo "• Application dependencies"
+                    echo "• Security misconfigurations"
+                    echo "• License compliance"
                     echo ""
-                    echo "Images with high/critical vulnerabilities may be blocked from deployment based on project policy."
+                    echo "Harbor UI: http://localhost:80"
+                    echo "Navigate: Projects → ${HARBOR_PROJECT} → Repositories → [image] → Vulnerabilities"
+                    echo ""
                     
-                    // Wait for vulnerability scan to complete
-                    echo "Waiting for Trivy vulnerability scanning to complete..."
-                    sleep 45
+                    // Wait for scan initiation
+                    echo "Waiting for vulnerability scans to initialize..."
+                    sleep 60
                     
-                    echo "=== Scan Status ==="
-                    echo "Trivy scanning completed for all pushed images."
-                    echo "Review scan results in Harbor UI before proceeding to deployment."
+                    echo "✓ Trivy vulnerability scanning initiated for all pushed images"
+                    echo "Review detailed scan results in Harbor UI"
                 }
             }
         }
@@ -334,9 +389,9 @@ EOF
                     echo "=== Deployment Status ==="
                     docker ps --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}"
                     
-                    echo "=== Service Health Check ==="
-                    sleep 30
-                    echo "Applications should be starting up..."
+                    echo "=== Health Check ==="
+                    sleep 45
+                    echo "Applications should be ready. Check service endpoints."
                 '''
             }
         }
@@ -351,35 +406,51 @@ EOF
                 sh 'pkill -f "config-server-.*.jar" || true'
                 
                 try {
-                    archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
+                    archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true, excludes: '**/*-sources.jar,**/*-javadoc.jar'
                 } catch (Exception e) {
-                    echo "No JAR files to archive"
+                    echo "No JAR files to archive: ${e.getMessage()}"
                 }
                 
-                // Clean up unused Docker images to save space
                 sh '''
-                    echo "Cleaning up unused Docker images..."
-                    docker image prune -f || true
+                    echo "Cleaning up unused Docker resources..."
+                    docker image prune -f --filter "dangling=true" || true
+                    docker container prune -f || true
                 '''
             }
         }
         success {
-            echo '=== Pipeline Success ==='
-            echo "✅ Build completed successfully!"
-            echo "✅ SonarQube code analysis completed"
-            echo "✅ Docker images built and pushed to Harbor: ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/"
-            echo "✅ Trivy vulnerability scanning completed"
-            echo "✅ Applications deployed successfully"
-            echo ""
-            echo "📋 Next Steps:"
-            echo "1. Review SonarQube reports for code quality"
-            echo "2. Check Harbor UI for vulnerability scan results"
-            echo "3. Verify application health in deployment environment"
+            echo '''
+=== 🎉 PIPELINE SUCCESS 🎉 ===
+
+✅ Build completed successfully
+✅ SonarQube code analysis completed  
+✅ Docker images built and pushed to Harbor
+✅ Trivy vulnerability scanning initiated
+✅ Applications deployed successfully
+
+📋 Next Steps:
+1. Review SonarQube reports: [SonarQube URL]
+2. Check vulnerability scans: Harbor UI → Projects → doan_devsecops
+3. Verify application health: Check service endpoints
+4. Monitor logs: docker-compose logs -f
+
+🔗 Useful Links:
+• Harbor Registry: http://localhost:80
+• SonarQube: [Your SonarQube URL]
+            '''
         }
         failure {
-            echo '=== Pipeline Failed ==='
-            echo "❌ Build failed at stage: ${env.STAGE_NAME}"
-            echo "Check logs above for detailed error information"
+            echo '''
+=== ❌ PIPELINE FAILED ❌ ===
+
+Pipeline failed at stage: ''' + "${env.STAGE_NAME}" + '''
+
+🔍 Troubleshooting:
+1. Check build logs above for detailed errors
+2. Verify all dependencies are running
+3. Check Docker daemon status
+4. Verify Harbor registry connectivity
+            '''
             sh "docker logout ${HARBOR_REGISTRY} || true"
         }
         cleanup {
