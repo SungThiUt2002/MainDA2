@@ -174,7 +174,7 @@ pipeline {
                                     def projectName = pomDir.replaceAll('^\\./', '')
                                     sh """
                                         echo "=== Running SonarQube Analysis for ${projectName} ==="
-                                        mvn clean compile sonar:sonar \
+                                        mvn sonar:sonar \
                                             -DskipTests=true \
                                             -Dsonar.projectKey=microservices-${projectName} \
                                             -Dsonar.projectName="Microservices ${projectName}" \
