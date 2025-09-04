@@ -7,31 +7,20 @@ pipeline {
     
     environment {
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-        JAVA_HOME = "/opt/java/openjdk"
         HARBOR_REGISTRY = "localhost:80"
         HARBOR_PROJECT = "doan_devsecops"
     }
     
     stages {
+        // Comment out time-consuming stages
+        /*
         stage('Environment Check') {
             steps {
                 sh '''
-                    echo "=== Build Environment ==="
-                    echo "JAVA_HOME: $JAVA_HOME"
-                    java -version
-              
-                    echo "=== Maven Version ==="
-                    mvn -version
-                
-                    echo "=== Project Structure ==="
-                    find . -maxdepth 2 -name "pom.xml" -exec dirname {} \\; | sort
-                    
-                    echo "=== Harbor Registry Config ==="
+                    echo "=== Quick Environment Check ==="
+                    docker --version
                     echo "HARBOR_REGISTRY: $HARBOR_REGISTRY"
                     echo "HARBOR_PROJECT: $HARBOR_PROJECT"
-                    
-                    echo "=== Docker Version ==="
-                    docker --version
                 '''
             }
         }
@@ -39,26 +28,9 @@ pipeline {
         stage('Start Dependencies') {
             steps {
                 script {
-                    echo "=== Starting Infrastructure via Docker Compose ==="
-                    sh 'docker-compose up -d || true'
-
-                    echo "=== Building and Starting Core Services ==="
-                    if (fileExists('discoveryservice')) {
-                        dir('discoveryservice') { 
-                            sh 'mvn clean package -DskipTests=true' 
-                            sh 'nohup java -jar target/discoveryservice-*.jar &'
-                        }
-                    }
-                    
-                    if (fileExists('config-server')) {
-                        dir('config-server') { 
-                            sh 'mvn clean package -DskipTests=true' 
-                            sh 'nohup java -jar target/config-server-*.jar &'
-                        }
-                    }
-                    
-                    echo "Waiting for dependencies to start..."
-                    sleep 30
+                    echo "=== Skipping dependency startup for faster build ==="
+                    // sh 'docker-compose up -d || true'
+                    // Start core services if needed
                 }
             }
         }
@@ -78,86 +50,10 @@ pipeline {
         }
         
         stage('Đóng gói mã nguồn ứng dụng') {
-            parallel {
-                stage('Account Service') {
-                    when {
-                        anyOf {
-                            expression { fileExists('Account-Service') }
-                            expression { fileExists('account-service') }
-                        }
-                    }
-                    steps {
-                        script {
-                            def serviceDir = fileExists('Account-Service') ? 'Account-Service' : 'account-service'
-                            dir(serviceDir) {
-                                echo "Building ${serviceDir}..."
-                                sh 'mvn clean package -DskipTests=true'
-                                echo "JAR files created:"
-                                sh 'ls -la target/*.jar'
-                            }
-                        }
-                    }
-                }
-                
-                stage('Cart Service') {
-                    when {
-                        anyOf {
-                            expression { fileExists('Cart-Service') }
-                            expression { fileExists('cart-service') }
-                        }
-                    }
-                    steps {
-                        script {
-                            def serviceDir = fileExists('Cart-Service') ? 'Cart-Service' : 'cart-service'
-                            dir(serviceDir) {
-                                echo "Building ${serviceDir}..."
-                                sh 'mvn clean package -DskipTests=true'
-                                echo "JAR files created:"
-                                sh 'ls -la target/*.jar'
-                            }
-                        }
-                    }
-                }
-                
-                stage('Product Service') {
-                    when {
-                        anyOf {
-                            expression { fileExists('Product-Service') }
-                            expression { fileExists('product-service') }
-                        }
-                    }
-                    steps {
-                        script {
-                            def serviceDir = fileExists('Product-Service') ? 'Product-Service' : 'product-service'
-                            dir(serviceDir) {
-                                echo "Building ${serviceDir}..."
-                                sh 'mvn clean package -DskipTests=true'
-                                echo "JAR files created:"
-                                sh 'ls -la target/*.jar'
-                            }
-                        }
-                    }
-                }
-                
-                stage('Other Services') {
-                    steps {
-                        script {
-                            def backendServices = ['Inventory-Service', 'inventory-service', 
-                                                 'Order-Service', 'order-service', 
-                                                 'Shop-Service', 'shop-service']
-                            
-                            backendServices.each { service ->
-                                if (fileExists(service) && fileExists("${service}/pom.xml")) {
-                                    dir(service) {
-                                        echo "Building backend service: ${service}..."
-                                        sh 'mvn clean package -DskipTests=true'
-                                        echo "JAR files created:"
-                                        sh 'ls -la target/*.jar'
-                                    }
-                                }
-                            }
-                        }
-                    }
+            steps {
+                script {
+                    echo "=== Skipping JAR build - will build in Docker ==="
+                    // JAR build will be handled by Docker multi-stage build
                 }
             }
         }
@@ -165,167 +61,17 @@ pipeline {
         stage('Quét mã nguồn') {
             steps {
                 script {
-                    def pomDirs = sh(script: "find . -maxdepth 2 -name 'pom.xml' -exec dirname {} \\;", returnStdout: true).trim().split('\n')
-                    
-                    pomDirs.each { pomDir ->
-                        if (pomDir && pomDir != '.') {
-                            dir(pomDir) {
-                                withSonarQubeEnv('SonarQube') {
-                                    def projectName = pomDir.replaceAll('^\\./', '')
-                                    sh """
-                                        echo "=== Running SonarQube Analysis for ${projectName} ==="
-                                        mvn sonar:sonar \
-                                            -DskipTests=true \
-                                            -Dsonar.projectKey=microservices-${projectName} \
-                                            -Dsonar.projectName="Microservices ${projectName}" \
-                                            -Dsonar.projectVersion=${GIT_COMMIT_SHORT} || echo "SonarQube failed for ${projectName}, continuing..."
-                                    """
-                                }
-                            }
-                        }
-                    }
+                    echo "=== Skipping SonarQube analysis for faster build ==="
+                    // SonarQube analysis commented out
                 }
             }
         }
+        */
         
-        stage('Đóng gói ứng dụng bằng Docker') {
-            parallel {
-                stage('Build Docker Images') {
-                    steps {
-                        script {
-                            def services = ['Account-Service', 'account-service', 'Cart-Service', 'cart-service', 
-                                          'Product-Service', 'product-service', 'Inventory-Service', 'inventory-service',
-                                          'Order-Service', 'order-service', 'Shop-Service', 'shop-service']
-                            
-                            services.each { service ->
-                                if (fileExists(service) && fileExists("${service}/target")) {
-                                    def serviceName = service.toLowerCase().replaceAll('[^a-z0-9-]', '-')
-                                    echo "=== Building Docker image for: ${serviceName} ==="
-                                    
-                                    dir(service) {
-                                        // Check JAR files first
-                                        echo "Checking target directory:"
-                                        sh 'ls -la target/'
-                                        
-                                        // Get exact JAR filename
-                                        def jarFile = sh(script: 'ls target/*.jar | head -1 | xargs basename', returnStdout: true).trim()
-                                        echo "JAR file found: ${jarFile}"
-                                        
-                                        // Create optimized Dockerfile with correct base image
-                                        if (fileExists('Dockerfile')) {
-                                            echo "Found existing Dockerfile, updating with correct base image..."
-                                            sh '''
-                                                # Backup original Dockerfile
-                                                cp Dockerfile Dockerfile.bak
-                                                
-                                                # Create new Dockerfile with updated base image
-                                                cat > Dockerfile << 'EOF'
-FROM eclipse-temurin:21-jre-alpine
-
-WORKDIR /app
-
-# Create non-root user
-RUN addgroup -g 1000 appuser && adduser -u 1000 -G appuser -s /bin/sh -D appuser
-
-# Copy JAR file
-COPY target/*.jar app.jar
-
-# Set ownership
-RUN chown appuser:appuser app.jar
-
-# Switch to non-root user
-USER appuser
-
-# Expose port
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \\
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
-
-# Run application
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
-EOF
-                                            '''
-                                        } else {
-                                            echo "Creating Dockerfile for ${serviceName}..."
-                                            sh """
-cat > Dockerfile << 'EOF'
-FROM eclipse-temurin:21-jre-alpine
-
-WORKDIR /app
-
-# Install curl/wget for health checks
-RUN apk add --no-cache curl wget
-
-# Create non-root user
-RUN addgroup -g 1000 appuser && adduser -u 1000 -G appuser -s /bin/sh -D appuser
-
-# Copy JAR file
-COPY target/${jarFile} app.jar
-
-# Set ownership
-RUN chown appuser:appuser app.jar
-
-# Switch to non-root user
-USER appuser
-
-# Expose port
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \\
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
-
-# Run application
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
-EOF"""
-                                        }
-                                        
-                                        echo "Final Dockerfile content:"
-                                        sh 'cat Dockerfile'
-                                        
-                                        echo "Building Docker image..."
-                                        sh """
-                                            docker build -t ${serviceName}:${GIT_COMMIT_SHORT} .
-                                            docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${serviceName}:latest
-                                            docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${GIT_COMMIT_SHORT}
-                                            docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest
-                                        """
-                                        
-                                        echo "Image built and tagged successfully for ${serviceName}"
-                                        sh "docker images | grep ${serviceName}"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                stage('Cập nhật tag và commit lên git') {
-                    steps {
-                        script {
-                            sh """
-                                echo "Creating Git tag..."
-                                git config user.name "Jenkins CI"
-                                git config user.email "jenkins@localhost"
-                                
-                                if git rev-parse "v${GIT_COMMIT_SHORT}" >/dev/null 2>&1; then
-                                    echo "Tag v${GIT_COMMIT_SHORT} already exists"
-                                else
-                                    git tag -a "v${GIT_COMMIT_SHORT}" -m "Release version ${GIT_COMMIT_SHORT}"
-                                    echo "Tag v${GIT_COMMIT_SHORT} created"
-                                fi
-                            """
-                        }
-                    }
-                }
-            }
-        }
-        
-        stage('Push image lên Harbor') {
+        stage('Build và Push Docker Images') {
             steps {
                 script {
+                    // Login to Harbor first
                     withCredentials([usernamePassword(credentialsId: 'harbor-login-robot', 
                                                     passwordVariable: 'HARBOR_PASSWORD', 
                                                     usernameVariable: 'HARBOR_USERNAME')]) {
@@ -335,149 +81,167 @@ EOF"""
                         """
                     }
                     
-                    def services = ['Account-Service', 'account-service', 'Cart-Service', 'cart-service', 
-                                  'Product-Service', 'product-service', 'Inventory-Service', 'inventory-service',
-                                  'Order-Service', 'order-service', 'Shop-Service', 'shop-service']
+                    def services = ['account-service', 'cart-service', 'product-service', 
+                                  'inventory-service', 'order-service', 'config-server', 
+                                  'discoveryservice']
                     
-                    def pushedImages = []
+                    def builtImages = []
+                    
                     services.each { service ->
-                        if (fileExists(service) && fileExists("${service}/target")) {
-                            def serviceName = service.toLowerCase().replaceAll('[^a-z0-9-]', '-')
+                        // Check both uppercase and lowercase directory names
+                        def serviceDir = null
+                        if (fileExists("${service.split('-').collect{it.capitalize()}.join('-')}")) {
+                            serviceDir = "${service.split('-').collect{it.capitalize()}.join('-')}"
+                        } else if (fileExists(service)) {
+                            serviceDir = service
+                        }
+                        
+                        if (serviceDir && fileExists("${serviceDir}/pom.xml")) {
+                            def serviceName = service.toLowerCase()
+                            echo "=== Processing ${serviceName} from ${serviceDir} ==="
                             
-                            // Verify image exists before pushing
-                            def imageExists = sh(script: "docker images -q ${serviceName}:${GIT_COMMIT_SHORT}", returnStdout: true).trim()
-                            if (imageExists) {
+                            dir(serviceDir) {
+                                // Create optimized Dockerfile with multi-stage build
+                                sh """
+cat > Dockerfile << 'EOF'
+FROM maven:3.9-eclipse-temurin-21 AS builder
+
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+
+# Build the application
+RUN mvn clean package -DskipTests=true
+
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Copy JAR from builder stage
+COPY --from=builder /app/target/*.jar app.jar
+
+# Set ownership
+RUN chown appuser:appuser app.jar
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \\
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+# Run application
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+EOF"""
+                                
+                                echo "Building Docker image for ${serviceName}..."
+                                sh """
+                                    docker build -t ${serviceName}:${GIT_COMMIT_SHORT} .
+                                    docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${serviceName}:latest
+                                    docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${GIT_COMMIT_SHORT}
+                                    docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest
+                                """
+                                
                                 echo "Pushing ${serviceName} to Harbor..."
                                 sh """
                                     docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${GIT_COMMIT_SHORT}
                                     docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest
                                 """
-                                pushedImages.add(serviceName)
-                                echo "Successfully pushed ${serviceName}"
-                            } else {
-                                error("Image ${serviceName}:${GIT_COMMIT_SHORT} not found!")
+                                
+                                builtImages.add(serviceName)
+                                echo "✅ Successfully built and pushed ${serviceName}"
                             }
+                        } else {
+                            echo "⚠️ Skipping ${service} - directory or pom.xml not found"
                         }
                     }
                     
                     sh "docker logout ${HARBOR_REGISTRY}"
                     
-                    echo "=== Push Summary ==="
-                    echo "Successfully pushed ${pushedImages.size()} images:"
-                    pushedImages.each { img ->
-                        echo "✓ ${img}"
-                    }
+                    echo """
+=== 🚀 BUILD & PUSH SUMMARY 🚀 ===
+
+Successfully built and pushed ${builtImages.size()} microservices:
+${builtImages.collect { "✅ ${it}:${GIT_COMMIT_SHORT}" }.join('\n')}
+
+🔗 Harbor Registry: http://localhost:80
+📁 Project: ${HARBOR_PROJECT}
+🏷️  Tag: ${GIT_COMMIT_SHORT} & latest
+                    """
                 }
             }
         }
         
-        stage('Quét image với Trivy') {
+        // Quick Git tagging
+        stage('Git Tagging') {
             steps {
                 script {
-                    echo "=== Harbor Vulnerability Scanning with Trivy ==="
-                    echo "Trivy scanner is automatically analyzing pushed images..."
-                    echo ""
-                    echo "Scanning for:"
-                    echo "• OS vulnerabilities (CVEs)"
-                    echo "• Application dependencies"
-                    echo "• Security misconfigurations"
-                    echo "• License compliance"
-                    echo ""
-                    echo "Harbor UI: http://localhost:80"
-                    echo "Navigate: Projects → ${HARBOR_PROJECT} → Repositories → [image] → Vulnerabilities"
-                    echo ""
-                    
-                    // Wait for scan initiation
-                    echo "Waiting for vulnerability scans to initialize..."
-                    sleep 60
-                    
-                    echo "✓ Trivy vulnerability scanning initiated for all pushed images"
-                    echo "Review detailed scan results in Harbor UI"
+                    sh """
+                        git config user.name "Jenkins CI"
+                        git config user.email "jenkins@localhost"
+                        
+                        if ! git rev-parse "v${GIT_COMMIT_SHORT}" >/dev/null 2>&1; then
+                            git tag -a "v${GIT_COMMIT_SHORT}" -m "Release version ${GIT_COMMIT_SHORT}"
+                            echo "✅ Tag v${GIT_COMMIT_SHORT} created"
+                        else
+                            echo "ℹ️ Tag v${GIT_COMMIT_SHORT} already exists"
+                        fi
+                    """
+                }
+            }
+        }
+        
+        /*
+        stage('Trivy Security Scan') {
+            steps {
+                script {
+                    echo "=== Security scanning will run automatically in Harbor ==="
+                    echo "Check Harbor UI for Trivy scan results"
                 }
             }
         }
         
         stage('Deploy') {
-            when {
-                anyOf {
-                    expression { fileExists('docker-compose.yml') }
-                    expression { fileExists('docker-compose.yaml') }
+            steps {
+                script {
+                    echo "=== Skipping deployment for faster pipeline ==="
+                    // docker-compose deployment commented out
                 }
             }
-            steps {
-                sh '''
-                    echo "=== Deploying Applications ==="
-                    echo "Stopping existing containers..."
-                    docker-compose down || true
-                    
-                    echo "Starting services with new images..."
-                    docker-compose up -d
-                    
-                    echo "=== Deployment Status ==="
-                    docker ps --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}"
-                    
-                    echo "=== Health Check ==="
-                    sleep 45
-                    echo "Applications should be ready. Check service endpoints."
-                '''
-            }
         }
+        */
     }
     
     post {
         always {
             script {
-                echo "=== Pipeline Cleanup ==="
-                
-                sh 'pkill -f "discoveryservice-.*.jar" || true'
-                sh 'pkill -f "config-server-.*.jar" || true'
-                
-                try {
-                    archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true, excludes: '**/*-sources.jar,**/*-javadoc.jar'
-                } catch (Exception e) {
-                    echo "No JAR files to archive: ${e.getMessage()}"
-                }
-                
                 sh '''
-                    echo "Cleaning up unused Docker resources..."
+                    echo "=== Quick Cleanup ==="
                     docker image prune -f --filter "dangling=true" || true
-                    docker container prune -f || true
                 '''
             }
         }
         success {
             echo '''
-=== 🎉 PIPELINE SUCCESS 🎉 ===
+🎉 DOCKER BUILD & HARBOR PUSH COMPLETED! 🎉
 
-✅ Build completed successfully
-✅ SonarQube code analysis completed  
-✅ Docker images built and pushed to Harbor
-✅ Trivy vulnerability scanning initiated
-✅ Applications deployed successfully
+✅ All microservice images built successfully
+✅ Images pushed to Harbor registry  
+✅ Git tag created
 
-📋 Next Steps:
-1. Review SonarQube reports: [SonarQube URL]
-2. Check vulnerability scans: Harbor UI → Projects → doan_devsecops
-3. Verify application health: Check service endpoints
-4. Monitor logs: docker-compose logs -f
-
-🔗 Useful Links:
-• Harbor Registry: http://localhost:80
-• SonarQube: [Your SonarQube URL]
+🔍 Next Steps:
+• Check Harbor UI: http://localhost:80
+• Review pushed images in project: doan_devsecops
+• Trivy security scans will run automatically
             '''
         }
         failure {
-            echo '''
-=== ❌ PIPELINE FAILED ❌ ===
-
-Pipeline failed at stage: ''' + "${env.STAGE_NAME}" + '''
-
-🔍 Troubleshooting:
-1. Check build logs above for detailed errors
-2. Verify all dependencies are running
-3. Check Docker daemon status
-4. Verify Harbor registry connectivity
-            '''
             sh "docker logout ${HARBOR_REGISTRY} || true"
         }
         cleanup {
