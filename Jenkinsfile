@@ -211,28 +211,55 @@ pipeline {
                                         def jarFile = sh(script: 'ls target/*.jar | head -1 | xargs basename', returnStdout: true).trim()
                                         echo "JAR file found: ${jarFile}"
                                         
-                                        // Create optimized Dockerfile
+                                        // Create optimized Dockerfile with correct base image
                                         if (fileExists('Dockerfile')) {
-                                            echo "Found existing Dockerfile, checking content..."
-                                            sh 'cat Dockerfile'
-                                            
-                                            // Fix commented Dockerfiles
+                                            echo "Found existing Dockerfile, updating with correct base image..."
                                             sh '''
-                                                if grep -q "^#FROM" Dockerfile; then
-                                                    echo "Uncommenting Dockerfile..."
-                                                    sed 's/^#//g' Dockerfile > Dockerfile.tmp && mv Dockerfile.tmp Dockerfile
-                                                fi
+                                                # Backup original Dockerfile
+                                                cp Dockerfile Dockerfile.bak
+                                                
+                                                # Create new Dockerfile with updated base image
+                                                cat > Dockerfile << 'EOF'
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1000 appuser && adduser -u 1000 -G appuser -s /bin/sh -D appuser
+
+# Copy JAR file
+COPY target/*.jar app.jar
+
+# Set ownership
+RUN chown appuser:appuser app.jar
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \\
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+
+# Run application
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+EOF
                                             '''
                                         } else {
                                             echo "Creating Dockerfile for ${serviceName}..."
                                             sh """
 cat > Dockerfile << 'EOF'
-FROM openjdk:21-jre-slim
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
+# Install curl/wget for health checks
+RUN apk add --no-cache curl wget
+
 # Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN addgroup -g 1000 appuser && adduser -u 1000 -G appuser -s /bin/sh -D appuser
 
 # Copy JAR file
 COPY target/${jarFile} app.jar
@@ -248,7 +275,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \\
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
 # Run application
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
