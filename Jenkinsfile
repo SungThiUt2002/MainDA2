@@ -8,7 +8,7 @@ pipeline {
     environment {
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
         JAVA_HOME = "/opt/java/openjdk"
-        HARBOR_REGISTRY = "localhost:8082"  
+        HARBOR_REGISTRY = "152.42.230.92:8082"  
         HARBOR_PROJECT = "doan_devsecops"
     }
     
