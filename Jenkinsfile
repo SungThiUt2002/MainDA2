@@ -37,7 +37,7 @@ pipeline {
             steps {
                 script {
                     echo "=== Starting Infrastructure via Docker Compose ==="
-                    sh 'docker compose up -d || true'
+                    sh 'docker-compose up -d || true'
 
                     echo "=== Building and Starting Core Services ==="
                     if (fileExists('discoveryservice')) {
@@ -353,10 +353,10 @@ ${builtImages.collect { "✅ ${it}:${GIT_COMMIT_SHORT}" }.join('\n')}
                 sh '''
                     echo "=== Deploying Applications ==="
                     echo "Stopping existing containers..."
-                    docker compose down || true
+                    docker-compose down || true
                     
                     echo "Starting services with new images..."
-                    docker compose up -d
+                    docker-compose up -d
                     
                     echo "=== Deployment Status ==="
                     docker ps --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}"
