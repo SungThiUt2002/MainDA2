@@ -185,16 +185,15 @@ EOF
                             cat > nginx.conf << 'EOF'
 server {
     listen 80;
-    server_name localhost;
-    
     location / {
         root /usr/share/nginx/html;
-        index index.html index.htm;
-        try_files \$uri \$uri/ /index.html;
+        try_files $uri $uri/ /index.html;
     }
+}
     
+    # API calls routed through Istio Gateway
     location /api/ {
-        proxy_pass http://api-gateway:8080/;
+        proxy_pass http://istio-gateway/;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
     }
@@ -261,7 +260,7 @@ FROM eclipse-temurin:21-jre-alpine
 # Metadata
 LABEL maintainer="DevSecOps Team"
 LABEL service="${service}"
-LABEL version="${GIT_COMMIT_SHORT}"
+LABEL version="${BUILD_VERSION}"
 
 # Cài đặt curl cho health check
 RUN apk add --no-cache curl
@@ -373,9 +372,7 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
             }
         }
         
-        // ===== COMMENTED OUT IMAGE SCANNING STAGE =====
-        // Harbor is configured to automatically scan images on push
-        // No need for manual scanning stage
+        // ===== IMAGE SCANNING STAGE =====
         /*
         stage('Quét image') {
             steps {
@@ -393,7 +390,7 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
             steps {
                 script {
                     sh """
-                        git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config || {
+                        git clone http://localhost:3010/nam/microservices-k8s.git k8s-config || {
                             cd k8s-config && git pull origin main
                         }
                         
