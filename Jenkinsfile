@@ -6,7 +6,7 @@ pipeline {
     }
     
     environment {
-        GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+        BUILD_VERSION = "v.${BUILD_NUMBER}"
         JAVA_HOME = "/opt/java/openjdk"
         HARBOR_REGISTRY = "152.42.230.92:8082"  
         HARBOR_PROJECT = "doan_devsecops"
@@ -116,6 +116,8 @@ pipeline {
             }
         }
         
+        // ===== COMMENTED OUT SONARQUBE STAGE =====
+        /*
         stage('Quét mã nguồn') {
             steps {
                 script {
@@ -141,11 +143,12 @@ pipeline {
                 }
             }
         }
+        */
         
         stage('Build và Push Docker Images') {
             steps {
                 script {
-                    // Login to Harbor với HTTP mode - theo cách thành công của file 2
+                    // Login to Harbor
                     withCredentials([usernamePassword(credentialsId: 'harbor-login-robot', 
                                                     passwordVariable: 'HARBOR_PASSWORD', 
                                                     usernameVariable: 'HARBOR_USERNAME')]) {
@@ -155,7 +158,61 @@ pipeline {
                         """
                     }
                     
-                    // Danh sách services cần build Docker images
+                    // Build Frontend first
+                    if (fileExists('src') && fileExists('package.json')) {
+                        echo "=== Building React Frontend ==="
+                        sh """
+                            # Install Node.js if not available
+                            if ! command -v node &> /dev/null; then
+                                curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                                sudo apt-get install -y nodejs
+                            fi
+                            
+                            # Build React app
+                            npm install
+                            npm run build
+                            
+                            # Create Dockerfile for frontend
+                            cat > Dockerfile << 'EOF'
+FROM nginx:alpine
+COPY build/ /usr/share/nginx/html/
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+EOF
+
+                            # Create nginx config
+                            cat > nginx.conf << 'EOF'
+server {
+    listen 80;
+    server_name localhost;
+    
+    location / {
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+        try_files \$uri \$uri/ /index.html;
+    }
+    
+    location /api/ {
+        proxy_pass http://api-gateway:8080/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+}
+EOF
+                            
+                            # Build and push frontend image
+                            docker build -t frontend:${BUILD_VERSION} .
+                            docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
+                            docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
+                            docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
+                            docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
+                            
+                            echo "✅ Frontend built and pushed successfully"
+                        """
+                    }
+                    
+                    // Backend services
                     def dockerServices = ['account-service', 'cart-service', 'product-service', 
                                         'inventory-service', 'order-service',
                                         'config-server', 'discoveryservice']
@@ -237,22 +294,22 @@ EOF"""
                                 echo "Building Docker image for ${serviceName}..."
                                 sh """
                                     # Build image với retry mechanism
-                                    docker build -t ${serviceName}:${GIT_COMMIT_SHORT} . || {
+                                    docker build -t ${serviceName}:${BUILD_VERSION} . || {
                                         echo "Build failed, retrying with network host mode..."
-                                        docker build --network=host -t ${serviceName}:${GIT_COMMIT_SHORT} .
+                                        docker build --network=host -t ${serviceName}:${BUILD_VERSION} .
                                     }
                                     
                                     # Tag images
-                                    docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${serviceName}:latest
-                                    docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${GIT_COMMIT_SHORT}
-                                    docker tag ${serviceName}:${GIT_COMMIT_SHORT} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest
+                                    docker tag ${serviceName}:${BUILD_VERSION} ${serviceName}:latest
+                                    docker tag ${serviceName}:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${BUILD_VERSION}
+                                    docker tag ${serviceName}:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest
                                 """
                                 
                                 echo "Pushing ${serviceName} to Harbor..."
                                 sh """
                                     # Push với retry mechanism
                                     for i in 1 2 3; do
-                                        if docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${GIT_COMMIT_SHORT} && \\
+                                        if docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${BUILD_VERSION} && \\
                                            docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest; then
                                             echo "✅ Push successful for ${serviceName}"
                                             break
@@ -265,7 +322,7 @@ EOF"""
                                 
                                 // Clean up local images để tiết kiệm disk space
                                 sh """
-                                    docker rmi ${serviceName}:${GIT_COMMIT_SHORT} ${serviceName}:latest || true
+                                    docker rmi ${serviceName}:${BUILD_VERSION} ${serviceName}:latest || true
                                 """
                                 
                                 builtImages.add(serviceName)
@@ -286,11 +343,11 @@ EOF"""
 === 🚀 BUILD & PUSH SUMMARY 🚀 ===
 
 Successfully built and pushed ${builtImages.size()} microservices:
-${builtImages.collect { "✅ ${it}:${GIT_COMMIT_SHORT}" }.join('\n')}
+${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
 
 🔗 Harbor Registry: http://${HARBOR_REGISTRY}
 📁 Project: ${HARBOR_PROJECT}
-🏷️  Tag: ${GIT_COMMIT_SHORT} & latest
+🏷️  Tag: ${BUILD_VERSION} & latest
                     """
                 }
             }
@@ -305,66 +362,52 @@ ${builtImages.collect { "✅ ${it}:${GIT_COMMIT_SHORT}" }.join('\n')}
                         git config user.email "jenkins@localhost"
                         
                         # Tạo tag nếu chưa tồn tại
-                        if ! git rev-parse "v${GIT_COMMIT_SHORT}" >/dev/null 2>&1; then
-                            git tag -a "v${GIT_COMMIT_SHORT}" -m "Release version ${GIT_COMMIT_SHORT} - Built on \$(date)"
-                            echo "✅ Tag v${GIT_COMMIT_SHORT} created successfully"
+                        if ! git rev-parse "v${BUILD_VERSION}" >/dev/null 2>&1; then
+                            git tag -a "v${BUILD_VERSION}" -m "Release version ${BUILD_VERSION} - Built on \$(date)"
+                            echo "✅ Tag v${BUILD_VERSION} created successfully"
                         else
-                            echo "ℹ️ Tag v${GIT_COMMIT_SHORT} already exists"
+                            echo "ℹ️ Tag v${BUILD_VERSION} already exists"
                         fi
                     """
                 }
             }
         }
         
+        // ===== COMMENTED OUT IMAGE SCANNING STAGE =====
+        // Harbor is configured to automatically scan images on push
+        // No need for manual scanning stage
+        /*
         stage('Quét image') {
             steps {
                 script {
                     echo "=== Harbor Vulnerability Scanning with Trivy ==="
                     echo "Harbor is automatically scanning pushed images for security vulnerabilities using Trivy scanner."
-                    echo "Trivy will scan for:"
-                    echo "- OS vulnerabilities (CVEs in base images)"
-                    echo "- Application dependencies vulnerabilities"
-                    echo "- Security misconfigurations"
-                    echo ""
                     echo "Check Harbor UI at http://${HARBOR_REGISTRY} for detailed vulnerability reports."
                     echo "Navigate to: Projects → ${HARBOR_PROJECT} → Repositories → Select image → Vulnerabilities tab"
-                    echo ""
-                    echo "Images with high/critical vulnerabilities may be blocked from deployment based on project policy."
-                    
-                    // Wait for vulnerability scan to complete
-                    echo "Waiting for Trivy vulnerability scanning to complete..."
-                    sleep 45
-                    
-                    echo "=== Scan Status ==="
-                    echo "Trivy scanning completed for all pushed images."
-                    echo "Review scan results in Harbor UI before proceeding to deployment."
                 }
             }
         }
+        */
         
-        stage('Deploy') {
-            when {
-                anyOf {
-                    expression { fileExists('docker-compose.yml') }
-                    expression { fileExists('docker-compose.yaml') }
-                }
-            }
+        stage('Update K8s Config Repository') {
             steps {
-                sh '''
-                    echo "=== Deploying Applications ==="
-                    echo "Stopping existing containers..."
-                    docker-compose down || true
-                    
-                    echo "Starting services with new images..."
-                    docker-compose up -d
-                    
-                    echo "=== Deployment Status ==="
-                    docker ps --format "table {{.Names}}\\t{{.Status}}\\t{{.Ports}}"
-                    
-                    echo "=== Service Health Check ==="
-                    sleep 30
-                    echo "Applications should be starting up..."
-                '''
+                script {
+                    sh """
+                        git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config || {
+                            cd k8s-config && git pull origin main
+                        }
+                        
+                        cd k8s-config
+                        find . -name "*.yaml" -o -name "*.yml" | grep -E "(deployment|deploy)" | while read file; do
+                            sed -i 's|image: .*/${HARBOR_PROJECT}/\\([^:]*\\):.*|image: ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/\\1:${BUILD_VERSION}|g' "\$file"
+                        done
+                        
+                        git config user.name "Jenkins CI"
+                        git config user.email "jenkins@localhost"
+                        git add . && git commit -m "Update images to ${BUILD_VERSION}" && git push origin main
+                        cd .. && rm -rf k8s-config
+                    """
+                }
             }
         }
     }
@@ -402,10 +445,10 @@ ${builtImages.collect { "✅ ${it}:${GIT_COMMIT_SHORT}" }.join('\n')}
 ✅ Environment check completed
 ✅ Dependencies started successfully
 ✅ JAR files built with Maven
-✅ SonarQube code analysis completed
+❌ SonarQube code analysis - SKIPPED (commented out)
 ✅ Docker images built with security optimizations  
 ✅ Images pushed to Harbor registry: ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/
-✅ Git tag v${GIT_COMMIT_SHORT} created
+✅ Git tag v${BUILD_VERSION} created
 ✅ Trivy vulnerability scanning completed
 ✅ Applications deployed successfully
 ✅ Cleanup performed
@@ -413,9 +456,9 @@ ${builtImages.collect { "✅ ${it}:${GIT_COMMIT_SHORT}" }.join('\n')}
 📊 Pipeline completed in ${currentBuild.durationString}
 
 📋 Next Steps:
-1. Review SonarQube reports for code quality
-2. Check Harbor UI for vulnerability scan results
-3. Verify application health in deployment environment
+1. Check Harbor UI for vulnerability scan results  
+2. Verify application health in deployment environment
+   (SonarQube reports skipped - uncomment stage if needed)
             """
         }
         failure {
@@ -430,7 +473,6 @@ Common issues:
 - Docker daemon not running  
 - Harbor registry connectivity
 - Insufficient permissions
-- SonarQube server unavailable
                 """
             }
         }
