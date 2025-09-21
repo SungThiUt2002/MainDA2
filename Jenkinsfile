@@ -8,7 +8,7 @@ pipeline {
     environment {
         BUILD_VERSION = "v.${BUILD_NUMBER}"
         JAVA_HOME = "/opt/java/openjdk"
-        HARBOR_REGISTRY = "localhost:8082"  
+        HARBOR_REGISTRY = "152.42.230.92:8082"  
         HARBOR_PROJECT = "doan_devsecops"
     }
     
@@ -390,7 +390,7 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
             steps {
                 script {
                     sh """
-                        git clone http://gitea:3000/nam/microservices-k8s.git k8s-config || {
+                        git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config || {
                             cd k8s-config && git pull origin main
                         }
                         
