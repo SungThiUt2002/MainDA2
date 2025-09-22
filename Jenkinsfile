@@ -426,7 +426,7 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
                 }
                 
                 // Clean up unused Docker images to save space
-                sh '''
+                sh """
                     echo "Cleaning up unused Docker images..."
                     docker image prune -f --filter "dangling=true" || true
                     docker volume prune -f || true
@@ -434,7 +434,7 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
                     # Show disk usage
                     df -h
                     docker system df
-                '''
+                """
             }
         }
         success {
