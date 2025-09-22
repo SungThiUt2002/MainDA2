@@ -134,7 +134,7 @@ pipeline {
                                             -DskipTests=true \
                                             -Dsonar.projectKey=microservices-${projectName} \
                                             -Dsonar.projectName="Microservices ${projectName}" \
-                                            -Dsonar.projectVersion=${GIT_COMMIT_SHORT} || echo "SonarQube failed for ${projectName}, continuing..."
+                                            -Dsonar.projectVersion=${BUILD_VERSION} || echo "SonarQube failed for ${projectName}, continuing..."
                                     """
                                 }
                             }
