@@ -117,7 +117,7 @@ pipeline {
         }
         
         // ===== SONARQUBE STAGE =====
-        /*
+      
         stage('Quét mã nguồn') {
             steps {
                 script {
@@ -143,7 +143,7 @@ pipeline {
                 }
             }
         }
-        */
+        
         
         stage('Build và Push Docker Images') {
             steps {
@@ -162,7 +162,7 @@ pipeline {
                     if (fileExists('shop/src') && fileExists('shop/package.json')) {
                         dir('shop') {    
                         echo "=== Building React Frontend ==="
-                        sh """
+                        sh '''
                             # Install Node.js if not available
                             if ! command -v node &> /dev/null; then
                                 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
@@ -188,15 +188,15 @@ server {
     listen 80;
     location / {
         root /usr/share/nginx/html;
-        try_files $$uri $$uri/ /index.html;
+        try_files \$uri \$uri/ /index.html;
     }
 }
     
     # API calls routed through Istio Gateway
     location /api/ {
         proxy_pass http://istio-gateway/;
-        proxy_set_header Host $$host;
-        proxy_set_header X-Real-IP $$remote_addr;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
     }
 }
 EOF
@@ -289,7 +289,7 @@ EXPOSE ${port}
 ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
 
 # Chạy ứng dụng với JVM options
-ENTRYPOINT ["sh", "-c", "java \\\$JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "java \$JAVA_OPTS -jar /app/app.jar"]
 EOF"""
                                 
                                 echo "Building Docker image for ${serviceName}..."
