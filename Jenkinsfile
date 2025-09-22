@@ -116,7 +116,7 @@ pipeline {
             }
         }
         
-        // ===== COMMENTED OUT SONARQUBE STAGE =====
+        // ===== SONARQUBE STAGE =====
         /*
         stage('Quét mã nguồn') {
             steps {
@@ -159,7 +159,8 @@ pipeline {
                     }
                     
                     // Build Frontend first
-                    if (fileExists('src') && fileExists('package.json')) {
+                    if (fileExists('shop/src') && fileExists('shop/package.json')) {
+                        dir('shop') {    
                         echo "=== Building React Frontend ==="
                         sh """
                             # Install Node.js if not available
@@ -187,15 +188,15 @@ server {
     listen 80;
     location / {
         root /usr/share/nginx/html;
-        try_files $uri $uri/ /index.html;
+        try_files $$uri $$uri/ /index.html;
     }
 }
     
     # API calls routed through Istio Gateway
     location /api/ {
         proxy_pass http://istio-gateway/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header Host $$host;
+        proxy_set_header X-Real-IP $$remote_addr;
     }
 }
 EOF
@@ -210,6 +211,7 @@ EOF
                             echo "✅ Frontend built and pushed successfully"
                         """
                     }
+                }
                     
                     // Backend services
                     def dockerServices = ['account-service', 'cart-service', 'product-service', 
