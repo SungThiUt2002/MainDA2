@@ -162,7 +162,7 @@ pipeline {
                     if (fileExists('shop/src') && fileExists('shop/package.json')) {
                         dir('shop') {    
                         echo "=== Building React Frontend ==="
-                        sh '''
+                        sh """
                             # Install Node.js if not available
                             if ! command -v node &> /dev/null; then
                                 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
@@ -290,7 +290,7 @@ ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
 
 # Chạy ứng dụng với JVM options
 ENTRYPOINT ["sh", "-c", "java \$JAVA_OPTS -jar /app/app.jar"]
-EOF"""
+EOF
                                 
                                 echo "Building Docker image for ${serviceName}..."
                                 sh """
