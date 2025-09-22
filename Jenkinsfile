@@ -162,18 +162,15 @@ pipeline {
                     if (fileExists('shop/src') && fileExists('shop/package.json')) {
                         dir('shop') {    
                         echo "=== Building React Frontend ==="
-                        sh """
-                            # Install Node.js if not available
+                        sh '''
                             if ! command -v node &> /dev/null; then
                                 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
                                 sudo apt-get install -y nodejs
                             fi
                             
-                            # Build React app
                             npm install
                             npm run build
                             
-                            # Create Dockerfile for frontend
                             cat > Dockerfile << 'EOF'
 FROM nginx:alpine
 COPY build/ /usr/share/nginx/html/
@@ -182,26 +179,24 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 EOF
 
-                            # Create nginx config
                             cat > nginx.conf << 'EOF'
 server {
     listen 80;
     location / {
         root /usr/share/nginx/html;
-        try_files \$uri \$uri/ /index.html;
+        try_files $uri $uri/ /index.html;
     }
-}
     
-    # API calls routed through Istio Gateway
     location /api/ {
         proxy_pass http://istio-gateway/;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
 }
 EOF
+                        '''
                             
-                            # Build and push frontend image
+                        sh """
                             docker build -t frontend:${BUILD_VERSION} .
                             docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
                             docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
@@ -255,71 +250,60 @@ EOF
                                 def port = servicePorts[service] ?: '8080'
                                 
                                 // Tạo Dockerfile với security best practices 
-                                sh """
+                                sh '''
 cat > Dockerfile << 'EOF'
 FROM eclipse-temurin:21-jre-alpine
 
-# Metadata
 LABEL maintainer="DevSecOps Team"
-LABEL service="${service}"
-LABEL version="${BUILD_VERSION}"
+LABEL service="''' + service + '''"
+LABEL version="''' + BUILD_VERSION + '''"
 
-# Cài đặt curl cho health check
 RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Tạo user không phải root để tăng bảo mật
 RUN addgroup -g 1001 -S appgroup && \\
     adduser -u 1001 -S appuser -G appgroup
 
-# Copy JAR file từ target directory
 COPY target/*.jar app.jar
 
-# Set ownership cho file
 RUN chown appuser:appgroup app.jar
 
-# Switch sang user không phải root
 USER appuser
 
-# Expose port cho service
-EXPOSE ${port}
+EXPOSE ''' + port + '''
 
-# JVM tuning cho container
 ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
 
-# Chạy ứng dụng với JVM options
-ENTRYPOINT ["sh", "-c", "java \$JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
 EOF
+'''
                                 
                                 echo "Building Docker image for ${serviceName}..."
                                 sh """
-                                    # Build image với retry mechanism
                                     docker build -t ${serviceName}:${BUILD_VERSION} . || {
                                         echo "Build failed, retrying with network host mode..."
                                         docker build --network=host -t ${serviceName}:${BUILD_VERSION} .
                                     }
                                     
-                                    # Tag images
                                     docker tag ${serviceName}:${BUILD_VERSION} ${serviceName}:latest
                                     docker tag ${serviceName}:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${BUILD_VERSION}
                                     docker tag ${serviceName}:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest
                                 """
                                 
                                 echo "Pushing ${serviceName} to Harbor..."
-                                sh """
-                                    # Push với retry mechanism
+                                sh '''
                                     for i in 1 2 3; do
-                                        if docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:${BUILD_VERSION} && \\
-                                           docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${serviceName}:latest; then
-                                            echo "✅ Push successful for ${serviceName}"
+                                        if docker push ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/''' + serviceName + ''':''' + BUILD_VERSION + ''' && \\
+                                           docker push ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/''' + serviceName + ''':latest; then
+                                            echo "✅ Push successful for ''' + serviceName + '''"
                                             break
                                         else
-                                            echo "Push failed, attempt \$i/3"
+                                            echo "Push failed, attempt $i/3"
                                             sleep 5
                                         fi
                                     done
-                                """
+                                '''
                                 
                                 // Clean up local images để tiết kiệm disk space
                                 sh """
@@ -357,19 +341,17 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
         stage('Git Tagging') {
             steps {
                 script {
-                    sh """
-                        # Cấu hình Git user
+                    sh '''
                         git config user.name "Jenkins CI"
                         git config user.email "jenkins@localhost"
                         
-                        # Tạo tag nếu chưa tồn tại
-                        if ! git rev-parse "v${BUILD_VERSION}" >/dev/null 2>&1; then
-                            git tag -a "v${BUILD_VERSION}" -m "Release version ${BUILD_VERSION} - Built on \$(date)"
-                            echo "✅ Tag v${BUILD_VERSION} created successfully"
+                        if ! git rev-parse "v''' + BUILD_VERSION + '''" >/dev/null 2>&1; then
+                            git tag -a "v''' + BUILD_VERSION + '''" -m "Release version ''' + BUILD_VERSION + ''' - Built on $(date)"
+                            echo "✅ Tag v''' + BUILD_VERSION + ''' created successfully"
                         else
-                            echo "ℹ️ Tag v${BUILD_VERSION} already exists"
+                            echo "ℹ️ Tag v''' + BUILD_VERSION + ''' already exists"
                         fi
-                    """
+                    '''
                 }
             }
         }
@@ -391,21 +373,21 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
         stage('Update K8s Config Repository') {
             steps {
                 script {
-                    sh """
+                    sh '''
                         git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config || {
                             cd k8s-config && git pull origin main
                         }
                         
                         cd k8s-config
                         find . -name "*.yaml" -o -name "*.yml" | grep -E "(deployment|deploy)" | while read file; do
-                            sed -i 's|image: .*/${HARBOR_PROJECT}/\\([^:]*\\):.*|image: ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/\\1:${BUILD_VERSION}|g' "\$file"
+                            sed -i 's|image: .*/''' + HARBOR_PROJECT + '''/\\([^:]*\\):.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/\\1:''' + BUILD_VERSION + '''|g' "$file"
                         done
                         
                         git config user.name "Jenkins CI"
                         git config user.email "jenkins@localhost"
-                        git add . && git commit -m "Update images to ${BUILD_VERSION}" && git push origin main
+                        git add . && git commit -m "Update images to ''' + BUILD_VERSION + '''" && git push origin main
                         cd .. && rm -rf k8s-config
-                    """
+                    '''
                 }
             }
         }
@@ -426,15 +408,14 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
                 }
                 
                 // Clean up unused Docker images to save space
-                sh """
+                sh '''
                     echo "Cleaning up unused Docker images..."
                     docker image prune -f --filter "dangling=true" || true
                     docker volume prune -f || true
                     
-                    # Show disk usage
                     df -h
                     docker system df
-                """
+                '''
             }
         }
         success {
