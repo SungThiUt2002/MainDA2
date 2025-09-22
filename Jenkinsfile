@@ -1,4 +1,4 @@
-pipeline {
+    pipeline {
     agent any
     
     tools {
@@ -163,13 +163,7 @@ pipeline {
                         dir('shop') {    
                         echo "=== Building React Frontend ==="
                         sh '''
-                            if ! command -v node &> /dev/null; then
-                                curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                                sudo apt-get install -y nodejs
-                            fi
-                            
-                            npm install
-                            npm run build
+                            docker run --rm -v $(pwd):/app -w /app node:18-alpine sh -c "npm install && npm run build"
                             
                             cat > Dockerfile << 'EOF'
 FROM nginx:alpine
