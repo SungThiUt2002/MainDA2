@@ -1,4 +1,4 @@
-    pipeline {
+pipeline {
     agent any
     
     tools {
@@ -63,13 +63,13 @@
         stage('Build JAR Files') {
             steps {
                 script {
-                    // Phân loại services theo loại - sử dụng cách tiếp cận của file 2
+                    // Phân loại services theo loại
                     def microservices = ['account-service', 'cart-service', 'product-service', 
                                        'inventory-service', 'order-service']
                     def infrastructureServices = ['config-server', 'discoveryservice', 'common-dto']
                     def allServices = microservices + infrastructureServices
                     
-                    // Build common-dto trước (vì các service khác depend vào nó)
+                    // Build common-dto trước
                     if (fileExists('common-dto') && fileExists('common-dto/pom.xml')) {
                         dir('common-dto') {
                             echo "🔧 Building common-dto library first..."
@@ -85,7 +85,7 @@
                         
                         def serviceDir = null
                         
-                        // Kiểm tra cả hai định dạng tên thư mục (Pascal và kebab case)
+                        // Kiểm tra cả hai định dạng tên thư mục
                         def pascalCase = service.split('-').collect { it.capitalize() }.join('-') + (service.endsWith('-service') ? '' : '-Service')
                         def kebabCase = service.toLowerCase()
                         
@@ -100,7 +100,6 @@
                                 echo "Building JAR for ${service} in directory ${serviceDir}..."
                                 sh 'mvn clean package -DskipTests=true'
                                 
-                                // Kiểm tra xem JAR đã được tạo chưa
                                 def jarExists = sh(script: "ls target/*.jar 2>/dev/null || echo 'no-jar'", returnStdout: true).trim()
                                 if (jarExists == 'no-jar') {
                                     error("JAR file not found for ${service}")
@@ -116,8 +115,6 @@
             }
         }
         
-        // ===== SONARQUBE STAGE =====
-      
         stage('Quét mã nguồn') {
             steps {
                 script {
@@ -144,7 +141,6 @@
             }
         }
         
-        
         stage('Build và Push Docker Images') {
             steps {
                 script {
@@ -159,48 +155,193 @@
                     }
                     
                     // Build Frontend first
-                    if (fileExists('shop/src') && fileExists('shop/package.json')) {
+                    if (fileExists('shop') && fileExists('shop/package.json')) {
                         dir('shop') {    
-                        echo "=== Building React Frontend ==="
-                        sh '''
-                            docker run --rm -v "$(pwd)":/app -w /app node:18-alpine sh -c "ls -la && npm install && npm run build"
+                            echo "=== Building React Frontend ==="
                             
-                            cat > Dockerfile << 'EOF'
-FROM nginx:alpine
-COPY build/ /usr/share/nginx/html/
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+                            // Xác nhận cấu trúc thư mục
+                            sh '''
+                                echo "=== Verifying shop directory structure ==="
+                                pwd
+                                ls -la
+                                echo "=== Checking package.json content ==="
+                                head -10 package.json
+                            '''
+                            
+                            // Build React app với error handling tốt hơn
+                            sh '''
+                                echo "=== Building React Application ==="
+                                
+                                # Tạo Dockerfile tạm để build
+                                cat > Dockerfile.build << 'EOF'
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
 EOF
 
-                            cat > nginx.conf << 'EOF'
+                                # Build React app
+                                docker build -f Dockerfile.build -t temp-react-builder .
+                                
+                                # Extract build artifacts
+                                docker run --rm -v "$(pwd)/build:/output" temp-react-builder sh -c "cp -r /app/build/* /output/"
+                                
+                                # Cleanup temp builder image
+                                docker rmi temp-react-builder
+                                
+                                echo "=== Build completed, checking output ==="
+                                ls -la build/ || echo "Build directory not found"
+                            '''
+                            
+                            // Tạo production Dockerfile
+                            sh '''
+                                cat > Dockerfile << 'EOF'
+FROM nginx:alpine
+
+# Install curl for health check
+RUN apk add --no-cache curl
+
+# Copy built React app
+COPY build/ /usr/share/nginx/html/
+
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nginx-group && \\
+    adduser -u 1001 -S nginx-user -G nginx-group
+
+# Set proper permissions
+RUN chown -R nginx-user:nginx-group /usr/share/nginx/html
+
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
+    CMD curl -f http://localhost/ || exit 1
+
+# Labels for better management
+LABEL maintainer="DevSecOps Team"
+LABEL service="frontend"
+LABEL version="''' + BUILD_VERSION + '''"
+
+CMD ["nginx", "-g", "daemon off;"]
+EOF
+                            '''
+
+                            // Tạo nginx configuration
+                            sh '''
+                                cat > nginx.conf << 'EOF'
 server {
     listen 80;
+    server_name _;
+    
+    root /usr/share/nginx/html;
+    index index.html;
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+    
+    # Handle React Router (SPA)
     location / {
-        root /usr/share/nginx/html;
         try_files $uri $uri/ /index.html;
     }
     
+    # API proxy to backend services
     location /api/ {
-        proxy_pass http://istio-gateway/;
+        proxy_pass http://api-gateway:8080/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # CORS headers
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization" always;
+        
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin * always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization" always;
+            add_header Access-Control-Max-Age 1728000;
+            add_header Content-Type 'text/plain; charset=utf-8';
+            add_header Content-Length 0;
+            return 204;
+        }
     }
+    
+    # Static assets caching
+    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/javascript
+        application/xml+rss
+        application/json;
 }
 EOF
+                            '''
+                                
+                            // Build Docker image và push
+                            sh """
+                                echo "=== Building Docker image for frontend ==="
+                                docker build -t frontend:${BUILD_VERSION} . || {
+                                    echo "Docker build failed, checking for common issues..."
+                                    ls -la
+                                    ls -la build/ || echo "Build directory missing"
+                                    exit 1
+                                }
+                                
+                                # Tag images
+                                docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
+                                docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
+                                
+                                echo "=== Pushing frontend images to Harbor ==="
+                                docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
+                                docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
+                                
+                                echo "✅ Frontend built and pushed successfully"
+                                
+                                # Cleanup local images to save space
+                                docker rmi frontend:${BUILD_VERSION} || true
+                            """
+                        }
+                    } else {
+                        echo "⚠️ Frontend build skipped - shop directory or package.json not found"
+                        
+                        // Debug information
+                        sh '''
+                            echo "=== Current directory structure ==="
+                            pwd
+                            ls -la
+                            
+                            echo "=== Looking for shop-related directories ==="
+                            find . -name "*shop*" -type d 2>/dev/null || echo "No shop directories found"
+                            
+                            echo "=== Looking for package.json files ==="
+                            find . -name "package.json" 2>/dev/null || echo "No package.json files found"
                         '''
-                            
-                        sh """
-                            docker build -t frontend:${BUILD_VERSION} .
-                            docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
-                            docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
-                            docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
-                            docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
-                            
-                            echo "✅ Frontend built and pushed successfully"
-                        """
                     }
-                }
                     
                     // Backend services
                     def dockerServices = ['account-service', 'cart-service', 'product-service', 
@@ -350,20 +491,6 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
             }
         }
         
-        // ===== IMAGE SCANNING STAGE =====
-        /*
-        stage('Quét image') {
-            steps {
-                script {
-                    echo "=== Harbor Vulnerability Scanning with Trivy ==="
-                    echo "Harbor is automatically scanning pushed images for security vulnerabilities using Trivy scanner."
-                    echo "Check Harbor UI at http://${HARBOR_REGISTRY} for detailed vulnerability reports."
-                    echo "Navigate to: Projects → ${HARBOR_PROJECT} → Repositories → Select image → Vulnerabilities tab"
-                }
-            }
-        }
-        */
-        
         stage('Update K8s Config Repository') {
             steps {
                 script {
@@ -419,11 +546,10 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
 ✅ Environment check completed
 ✅ Dependencies started successfully
 ✅ JAR files built with Maven
-❌ SonarQube code analysis - SKIPPED (commented out)
+✅ SonarQube code analysis completed
 ✅ Docker images built with security optimizations  
 ✅ Images pushed to Harbor registry: ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/
 ✅ Git tag v${BUILD_VERSION} created
-✅ Trivy vulnerability scanning completed
 ✅ Applications deployed successfully
 ✅ Cleanup performed
 
@@ -432,7 +558,6 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
 📋 Next Steps:
 1. Check Harbor UI for vulnerability scan results  
 2. Verify application health in deployment environment
-   (SonarQube reports skipped - uncomment stage if needed)
             """
         }
         failure {
