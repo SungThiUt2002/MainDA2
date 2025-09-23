@@ -36,10 +36,10 @@ pipeline {
         stage('Detect Changed Services') {
             steps {
                 script {
-                    echo "=== Detecting changes by comparing with main branch ==="
-                    sh "git fetch origin main"
+                    echo "=== Detecting changes by comparing with the previous commit ==="
 
-                    def changedFiles = sh(script: "git diff --name-only origin/main HEAD", returnStdout: true).trim().split('\n')
+                    // Sửa đổi: Sử dụng lệnh git diff HEAD~1 HEAD
+                    def changedFiles = sh(script: "git diff --name-only HEAD~1 HEAD", returnStdout: true).trim().split('\n')
 
                     echo "Changed files: ${changedFiles.join(', ')}"
 
