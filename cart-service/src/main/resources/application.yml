@@ -4,7 +4,7 @@
 spring:
   application:
     name: cart-service
-config:
+  config:
     import: optional:configserver:${SPRING_CLOUD_CONFIG_URI:http://localhost:9021}  # import config từ Config Server
   cloud:
     config:
