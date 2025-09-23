@@ -128,10 +128,10 @@ pipeline {
                                     def projectName = pomDir.replaceAll('^\\./', '')
                                     sh """
                                         echo "=== Running SonarQube Analysis for ${projectName} ==="
-                                        mvn compile sonar:sonar \
-                                            -DskipTests=true \
-                                            -Dsonar.projectKey=microservices-${projectName} \
-                                            -Dsonar.projectName="Microservices ${projectName}" \
+                                        mvn compile sonar:sonar \\
+                                            -DskipTests=true \\
+                                            -Dsonar.projectKey=microservices-${projectName} \\
+                                            -Dsonar.projectName="Microservices ${projectName}" \\
                                             -Dsonar.projectVersion=${BUILD_VERSION} || echo "SonarQube failed for ${projectName}, continuing..."
                                     """
                                 }
@@ -193,9 +193,9 @@ EOF
                                     sh """
                                         cat > Dockerfile <<EOF
 FROM eclipse-temurin:21-jre-alpine
-COPY target/*.jar app.jar
+COPY target/*.jar /app.jar
 EXPOSE ${port}
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app.jar"]
 EOF
                                         docker build -t ${service}:${BUILD_VERSION} .
                                         docker tag ${service}:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${service}:${BUILD_VERSION}
@@ -230,7 +230,7 @@ EOF
                             git config user.name "Jenkins CI"
                             git config user.email "jenkins@localhost"
                             git config credential.helper store
-                            echo "protocol=http\nhost=152.42.230.92:3010\nusername=\${GIT_USERNAME}\npassword=\${GIT_PASSWORD}" | git credential approve
+                            echo "protocol=http\\nhost=152.42.230.92:3010\\nusername=\${GIT_USERNAME}\\npassword=\${GIT_PASSWORD}" | git credential approve
 
                             if ! git rev-parse "v${BUILD_VERSION}" >/dev/null 2>&1; then
                                 echo "Creating tag v${BUILD_VERSION}..."
