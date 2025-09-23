@@ -154,30 +154,30 @@ pipeline {
                         """
                     }
                     
-                    // Build Frontend first
-                    if (fileExists('shop') && fileExists('shop/package.json')) {
-                        dir('shop') {    
-                            echo "=== Building React Frontend ==="
-                            
-                            // Xác nhận cấu trúc thư mục
-                            sh '''
-                                echo "=== Verifying shop directory structure ==="
-                                pwd
-                                ls -la
-                                echo "=== Checking package.json content ==="
-                                head -10 package.json
-                            '''
+                    // Build Frontend first - FIXED VERSION with proper indentation
+if (fileExists('shop') && fileExists('shop/package.json')) {
+    dir('shop') {    
+        echo "=== Building React Frontend ==="
         
-                    // Build React app - FIXED METHOD
-                        sh '''
-                            echo "=== Building React Application ==="
+        // Xác nhận cấu trúc thư mục
+        sh '''
+            echo "=== Verifying shop directory structure ==="
+            pwd
+            ls -la
+            echo "=== Checking package.json content ==="
+            head -10 package.json
+        '''
+
+        // Build React app - FIXED METHOD
+        sh '''
+            echo "=== Building React Application ==="
             
-                            # Method 1: Simple direct build (recommended)
+            # Method 1: Simple direct build (recommended)
             echo "Building React app with Node container..."
-            docker run --rm \
-                -v "$(pwd):/workspace" \
-                -w /workspace \
-                node:20-alpine \
+            docker run --rm \\
+                -v "$(pwd):/workspace" \\
+                -w /workspace \\
+                node:20-alpine \\
                 sh -c "
                     echo 'Node version:' && node --version
                     echo 'Installing dependencies...'
@@ -236,15 +236,15 @@ COPY build/ /usr/share/nginx/html/
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nginx-group && \
-    adduser -u 1001 -S nginx-user -G nginx-group && \
+RUN addgroup -g 1001 -S nginx-group && \\
+    adduser -u 1001 -S nginx-user -G nginx-group && \\
     chown -R nginx-user:nginx-group /usr/share/nginx/html /var/cache/nginx /var/run /var/log/nginx
 
 # Expose port
 EXPOSE 80
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
     CMD curl -f http://localhost/ || exit 1
 
 # Labels for better management
@@ -309,7 +309,7 @@ server {
     }
     
     # Static assets caching
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
         add_header Vary "Accept-Encoding";
@@ -376,8 +376,7 @@ EOF
     }
 } else {
     echo "⚠️ Frontend build skipped - shop directory or package.json not found"
-}
-                    
+}             
                     // Backend services
                     def dockerServices = ['account-service', 'cart-service', 'product-service', 
                                         'inventory-service', 'order-service',
