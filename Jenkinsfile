@@ -63,13 +63,12 @@ pipeline {
         stage('Build JAR Files') {
             steps {
                 script {
-                    // Phân loại services theo loại
                     def microservices = ['account-service', 'cart-service', 'product-service', 
                                        'inventory-service', 'order-service']
                     def infrastructureServices = ['config-server', 'discoveryservice', 'common-dto']
                     def allServices = microservices + infrastructureServices
                     
-                    // Build common-dto trước
+                    // Build common-dto first
                     if (fileExists('common-dto') && fileExists('common-dto/pom.xml')) {
                         dir('common-dto') {
                             echo "🔧 Building common-dto library first..."
@@ -80,12 +79,10 @@ pipeline {
                     
                     allServices.each { service ->
                         if (service == 'common-dto') {
-                            return // Đã build ở trên
+                            return
                         }
                         
                         def serviceDir = null
-                        
-                        // Kiểm tra cả hai định dạng tên thư mục
                         def pascalCase = service.split('-').collect { it.capitalize() }.join('-') + (service.endsWith('-service') ? '' : '-Service')
                         def kebabCase = service.toLowerCase()
                         
@@ -154,113 +151,186 @@ pipeline {
                         """
                     }
                     
-                    // Build Frontend first - FIXED VERSION with proper indentation
-if (fileExists('shop') && fileExists('shop/package.json')) {
-    dir('shop') {    
-        echo "=== Building React Frontend ==="
-        
-        // Xác nhận cấu trúc thư mục
-        sh '''
-            echo "=== Verifying shop directory structure ==="
-            pwd
-            ls -la
-            echo "=== Checking package.json content ==="
-            head -10 package.json
-        '''
+                    // Build Frontend - COMPLETELY FIXED
+                    if (fileExists('shop') && fileExists('shop/package.json')) {
+                        dir('shop') {    
+                            echo "=== Building React Frontend ==="
+                            
+                            sh '''
+                                echo "=== Directory verification ==="
+                                pwd && ls -la
+                                echo "=== Package.json check ==="
+                                head -5 package.json
+                            '''
 
-        // Build React app - FIXED METHOD
-        sh '''
-            echo "=== Building React Application ==="
-            
-            # Method 1: Simple direct build (recommended)
-            echo "Building React app with Node container..."
-            docker run --rm \\
-                -v "$(pwd):/workspace" \\
-                -w /workspace \\
-                node:20-alpine \\
-                sh -c "
-                    echo 'Node version:' && node --version
-                    echo 'Installing dependencies...'
-                    npm ci --production=false
-                    echo 'Building React app...'
-                    npm run build
-                    echo 'Build completed successfully!'
-                    ls -la build/
-                "
-            
-            echo "=== Verifying build output ==="
-            if [ -d "build" ] && [ "$(ls -A build 2>/dev/null)" ]; then
-                echo "✅ Build successful - Contents:"
-                ls -la build/
-                echo "Static files:"
-                find build/static -name "*.js" -o -name "*.css" | head -5
-            else
-                echo "❌ Build failed - attempting alternative method..."
-                
-                # Alternative method if first fails
-                cat > Dockerfile.temp << 'EOF'
+                            timeout(time: 20, unit: 'MINUTES') {
+                                sh '''
+                                    echo "=== Building React Application ==="
+                                    
+                                    # FIXED: Skip problematic volume mount, use COPY-based approach only
+                                    echo "Using reliable Docker COPY method (avoiding mount issues)..."
+                                    
+                                    cat > Dockerfile.build << 'EOF'
 FROM node:20-alpine
+
+# Install git for some npm packages
+RUN apk add --no-cache git
+
 WORKDIR /app
+
+# Copy package files first for better caching
 COPY package*.json ./
-RUN npm ci --production=false
+
+# Install dependencies with optimizations
+RUN echo "Installing dependencies..." && \\
+    npm ci --silent --no-audit --no-fund --production=false && \\
+    echo "Dependencies installed"
+
+# Copy all source code
 COPY . .
-RUN npm run build
+
+# Build the application
+RUN echo "Building React app..." && \\
+    CI=false npm run build && \\
+    echo "Build completed" && \\
+    ls -la build/ && \\
+    echo "Build verification: $(ls -A build | wc -l) files created"
 EOF
-                
-                docker build -f Dockerfile.temp -t temp-builder .
-                docker create --name temp-container temp-builder
-                docker cp temp-container:/app/build ./
-                docker rm temp-container
-                docker rmi temp-builder
-                rm -f Dockerfile.temp
-                
-                if [ ! -d "build" ]; then
-                    echo "❌ Both build methods failed"
-                    exit 1
-                fi
-            fi
-        '''
-        
-        // Tạo production Dockerfile
-        sh '''
-            cat > Dockerfile << 'EOF'
+
+                                    echo "Starting Docker build process..."
+                                    
+                                    # Build with progress monitoring
+                                    docker build -f Dockerfile.build -t react-builder . 2>&1 | while IFS= read -r line; do
+                                        echo "$line"
+                                        # Periodic output to prevent Jenkins timeout
+                                        case "$line" in
+                                            *"Step"*|*"RUN"*|*"npm"*|*"webpack"*|*"Compiled"*)
+                                                echo "[$(date '+%H:%M:%S')] Progress: $line"
+                                                ;;
+                                        esac
+                                    done
+                                    
+                                    # FIXED: Improved build detection logic
+                                    echo "=== Extracting and verifying build ==="
+                                    
+                                    # Create container and extract build
+                                    docker create --name build-container react-builder
+                                    
+                                    # Copy build directory out
+                                    if docker cp build-container:/app/build ./build; then
+                                        echo "Build extraction successful"
+                                    else
+                                        echo "Build extraction failed, trying alternative..."
+                                        docker cp build-container:/app/build/. ./build/
+                                    fi
+                                    
+                                    # Cleanup container and image
+                                    docker rm build-container
+                                    docker rmi react-builder
+                                    rm -f Dockerfile.build
+                                    
+                                    echo "=== FIXED Build Verification Logic ==="
+                                    
+                                    # Multiple verification methods for robustness
+                                    BUILD_SUCCESS=false
+                                    
+                                    # Method 1: Check directory and key files
+                                    if [ -d "build" ] && [ -f "build/index.html" ]; then
+                                        echo "✓ Method 1: Directory and index.html check passed"
+                                        BUILD_SUCCESS=true
+                                    fi
+                                    
+                                    # Method 2: Check for non-empty build directory
+                                    if [ -d "build" ] && [ -n "$(find build -type f -name '*.html' -o -name '*.js' -o -name '*.css' 2>/dev/null | head -1)" ]; then
+                                        echo "✓ Method 2: Build files detected"
+                                        BUILD_SUCCESS=true
+                                    fi
+                                    
+                                    # Method 3: Count files in build directory
+                                    if [ -d "build" ] && [ "$(find build -type f 2>/dev/null | wc -l)" -gt 3 ]; then
+                                        echo "✓ Method 3: Sufficient build files found ($(find build -type f | wc -l) files)"
+                                        BUILD_SUCCESS=true
+                                    fi
+                                    
+                                    # Final verification
+                                    if [ "$BUILD_SUCCESS" = "true" ]; then
+                                        echo "✅ BUILD VERIFICATION SUCCESSFUL"
+                                        echo "Build directory contents:"
+                                        ls -la build/
+                                        echo "Total files: $(find build -type f | wc -l)"
+                                        echo "Build size: $(du -sh build/ | cut -f1)"
+                                        
+                                        # Show key files
+                                        echo "Key build files:"
+                                        [ -f "build/index.html" ] && echo "  ✓ index.html ($(wc -c < build/index.html) bytes)"
+                                        [ -f "build/asset-manifest.json" ] && echo "  ✓ asset-manifest.json"
+                                        
+                                        # Count static files
+                                        if [ -d "build/static" ]; then
+                                            echo "  ✓ static/ directory ($(find build/static -type f | wc -l) files)"
+                                        fi
+                                        
+                                    else
+                                        echo "❌ BUILD VERIFICATION FAILED"
+                                        echo "Debug information:"
+                                        echo "Current directory: $(pwd)"
+                                        echo "Directory listing:"
+                                        ls -la
+                                        
+                                        if [ -d "build" ]; then
+                                            echo "Build directory exists but appears incomplete:"
+                                            ls -la build/
+                                            find build -type f | head -10
+                                        else
+                                            echo "Build directory does not exist"
+                                        fi
+                                        
+                                        exit 1
+                                    fi
+                                '''
+                            }
+                            
+                            // Create production Dockerfile
+                            sh '''
+                                echo "=== Creating Production Dockerfile ==="
+                                cat > Dockerfile << 'EOF'
 FROM nginx:alpine
 
-# Install curl for health check  
-RUN apk add --no-cache curl
+# Security: Install curl and create non-root user
+RUN apk add --no-cache curl && \\
+    addgroup -g 1001 -S appgroup && \\
+    adduser -u 1001 -S appuser -G appgroup
 
-# Copy built React app
+# Copy built application
 COPY build/ /usr/share/nginx/html/
 
-# Copy custom nginx configuration
+# Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nginx-group && \\
-    adduser -u 1001 -S nginx-user -G nginx-group && \\
-    chown -R nginx-user:nginx-group /usr/share/nginx/html /var/cache/nginx /var/run /var/log/nginx
+# Set proper permissions
+RUN chown -R appuser:appgroup /usr/share/nginx/html /var/cache/nginx /var/run
 
-# Expose port
-EXPOSE 80
+# Switch to non-root user
+USER appuser
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
-    CMD curl -f http://localhost/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \\
+    CMD curl -f http://localhost:80/ || exit 1
 
-# Labels for better management
-LABEL maintainer="DevSecOps Team"
-LABEL service="frontend"
-LABEL version="''' + BUILD_VERSION + '''"
+# Labels
+LABEL maintainer="DevSecOps Team" \\
+      service="frontend" \\
+      version="''' + BUILD_VERSION + '''"
 
-USER nginx-user
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
 EOF
-        '''
+                            '''
 
-        // Tạo nginx configuration
-        sh '''
-            cat > nginx.conf << 'EOF'
+                            // Create nginx configuration
+                            sh '''
+                                cat > nginx.conf << 'EOF'
 server {
     listen 80;
     server_name _;
@@ -273,53 +343,42 @@ server {
     add_header X-XSS-Protection "1; mode=block" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
-    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
     
-    # Handle React Router (SPA routing)
+    # SPA routing
     location / {
         try_files $uri $uri/ /index.html;
     }
     
-    # API proxy to backend services  
+    # API proxy
     location /api/ {
-        proxy_pass http://api-gateway:8080/;
+        proxy_pass http://backend-gateway:8080/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Timeouts
         proxy_connect_timeout 30s;
         proxy_send_timeout 30s;
         proxy_read_timeout 30s;
         
-        # CORS headers for API calls
+        # CORS headers
         add_header Access-Control-Allow-Origin * always;
         add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
-        add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization" always;
-        
-        # Handle preflight requests
-        if ($request_method = 'OPTIONS') {
-            add_header Access-Control-Allow-Origin * always;
-            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
-            add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization" always;
-            add_header Access-Control-Max-Age 1728000;
-            add_header Content-Type 'text/plain; charset=utf-8';
-            add_header Content-Length 0;
-            return 204;
-        }
+        add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
     }
     
-    # Static assets caching
+    # Static file caching
     location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
         add_header Vary "Accept-Encoding";
     }
     
-    # Gzip compression
+    # Compression
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_proxied any;
     gzip_comp_level 6;
     gzip_types
         text/plain
@@ -327,56 +386,40 @@ server {
         text/xml
         text/javascript
         application/javascript
-        application/xml+rss
-        application/json;
-        
-    # Security improvements
+        application/json
+        application/xml+rss;
+    
+    # Security
     server_tokens off;
     client_max_body_size 10M;
 }
 EOF
-        '''
-            
-        // Build Docker image và push
-        sh """
-            echo "=== Building Docker image for frontend ==="
-            
-            # Verify build directory exists before Docker build
-            if [ ! -d "build" ] || [ -z "\$(ls -A build 2>/dev/null)" ]; then
-                echo "❌ Build directory missing or empty"
-                ls -la
-                exit 1
-            fi
-            
-            echo "✅ Build directory verified, proceeding with Docker build..."
-            docker build -t frontend:${BUILD_VERSION} . || {
-                echo "❌ Docker build failed, debugging..."
-                echo "Current directory contents:"
-                ls -la
-                echo "Build directory contents:"
-                ls -la build/ || echo "Build directory not accessible"
-                echo "Dockerfile content:"
-                cat Dockerfile
-                exit 1
-            }
-            
-            # Tag images
-            docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
-            docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
-            
-            echo "=== Pushing frontend images to Harbor ==="
-            docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
-            docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
-            
-            echo "✅ Frontend built and pushed successfully"
-            
-            # Cleanup local images to save space
-            docker rmi frontend:${BUILD_VERSION} || true
-        """
-    }
-} else {
-    echo "⚠️ Frontend build skipped - shop directory or package.json not found"
-}             
+                            '''
+                                
+                            // Build and push Docker image
+                            sh """
+                                echo "=== Building Production Docker Image ==="
+                                
+                                docker build -t frontend:${BUILD_VERSION} .
+                                
+                                # Tag for Harbor
+                                docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
+                                docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
+                                
+                                echo "=== Pushing to Harbor Registry ==="
+                                docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
+                                docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
+                                
+                                echo "✅ Frontend image pushed successfully!"
+                                
+                                # Cleanup
+                                docker rmi frontend:${BUILD_VERSION} || true
+                            """
+                        }
+                    } else {
+                        echo "⚠️ Frontend build skipped - shop directory or package.json not found"
+                    }
+                    
                     // Backend services
                     def dockerServices = ['account-service', 'cart-service', 'product-service', 
                                         'inventory-service', 'order-service',
@@ -386,8 +429,6 @@ EOF
                     
                     dockerServices.each { service ->
                         def serviceDir = null
-                        
-                        // Kiểm tra cả hai định dạng tên thư mục
                         def pascalCase = service.split('-').collect { it.capitalize() }.join('-')
                         if (!service.endsWith('-service') && !service.equals('config-server') && !service.equals('discoveryservice')) {
                             pascalCase += '-Service'
@@ -405,7 +446,6 @@ EOF
                             echo "=== Processing ${serviceName} from ${serviceDir} ==="
                             
                             dir(serviceDir) {
-                                // Port mapping cho từng service
                                 def servicePorts = [
                                     'account-service': '9003',
                                     'cart-service': '9008', 
@@ -418,7 +458,6 @@ EOF
                                 
                                 def port = servicePorts[service] ?: '8080'
                                 
-                                // Tạo Dockerfile với security best practices 
                                 sh '''
 cat > Dockerfile << 'EOF'
 FROM eclipse-temurin:21-jre-alpine
@@ -474,7 +513,6 @@ EOF
                                     done
                                 '''
                                 
-                                // Clean up local images để tiết kiệm disk space
                                 sh """
                                     docker rmi ${serviceName}:${BUILD_VERSION} ${serviceName}:latest || true
                                 """
@@ -562,7 +600,6 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
                     echo "No JAR files to archive"
                 }
                 
-                // Clean up unused Docker images to save space
                 sh '''
                     echo "Cleaning up unused Docker images..."
                     docker image prune -f --filter "dangling=true" || true
