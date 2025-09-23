@@ -167,40 +167,66 @@ pipeline {
                                 echo "=== Checking package.json content ==="
                                 head -10 package.json
                             '''
-                            
-                            // Build React app với error handling tốt hơn
-                            sh '''
-                                echo "=== Building React Application ==="
-                                
-                                # Tạo Dockerfile tạm để build
-                                cat > Dockerfile.build << 'EOF'
-FROM node:18-alpine
+        
+                    // Build React app - FIXED METHOD
+                        sh '''
+                            echo "=== Building React Application ==="
+            
+                            # Method 1: Simple direct build (recommended)
+            echo "Building React app with Node container..."
+            docker run --rm \
+                -v "$(pwd):/workspace" \
+                -w /workspace \
+                node:20-alpine \
+                sh -c "
+                    echo 'Node version:' && node --version
+                    echo 'Installing dependencies...'
+                    npm ci --production=false
+                    echo 'Building React app...'
+                    npm run build
+                    echo 'Build completed successfully!'
+                    ls -la build/
+                "
+            
+            echo "=== Verifying build output ==="
+            if [ -d "build" ] && [ "$(ls -A build 2>/dev/null)" ]; then
+                echo "✅ Build successful - Contents:"
+                ls -la build/
+                echo "Static files:"
+                find build/static -name "*.js" -o -name "*.css" | head -5
+            else
+                echo "❌ Build failed - attempting alternative method..."
+                
+                # Alternative method if first fails
+                cat > Dockerfile.temp << 'EOF'
+FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm ci --production=false
 COPY . .
 RUN npm run build
 EOF
-
-                                # Build React app
-                                docker build -f Dockerfile.build -t temp-react-builder .
-                                
-                                # Extract build artifacts
-                                docker run --rm -v "$(pwd)/build:/output" temp-react-builder sh -c "cp -r /app/build/* /output/"
-                                
-                                # Cleanup temp builder image
-                                docker rmi temp-react-builder
-                                
-                                echo "=== Build completed, checking output ==="
-                                ls -la build/ || echo "Build directory not found"
-                            '''
-                            
-                            // Tạo production Dockerfile
-                            sh '''
-                                cat > Dockerfile << 'EOF'
+                
+                docker build -f Dockerfile.temp -t temp-builder .
+                docker create --name temp-container temp-builder
+                docker cp temp-container:/app/build ./
+                docker rm temp-container
+                docker rmi temp-builder
+                rm -f Dockerfile.temp
+                
+                if [ ! -d "build" ]; then
+                    echo "❌ Both build methods failed"
+                    exit 1
+                fi
+            fi
+        '''
+        
+        // Tạo production Dockerfile
+        sh '''
+            cat > Dockerfile << 'EOF'
 FROM nginx:alpine
 
-# Install curl for health check
+# Install curl for health check  
 RUN apk add --no-cache curl
 
 # Copy built React app
@@ -210,16 +236,15 @@ COPY build/ /usr/share/nginx/html/
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nginx-group && \\
-    adduser -u 1001 -S nginx-user -G nginx-group
+RUN addgroup -g 1001 -S nginx-group && \
+    adduser -u 1001 -S nginx-user -G nginx-group && \
+    chown -R nginx-user:nginx-group /usr/share/nginx/html /var/cache/nginx /var/run /var/log/nginx
 
-# Set proper permissions
-RUN chown -R nginx-user:nginx-group /usr/share/nginx/html
-
+# Expose port
 EXPOSE 80
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost/ || exit 1
 
 # Labels for better management
@@ -227,13 +252,15 @@ LABEL maintainer="DevSecOps Team"
 LABEL service="frontend"
 LABEL version="''' + BUILD_VERSION + '''"
 
+USER nginx-user
+
 CMD ["nginx", "-g", "daemon off;"]
 EOF
-                            '''
+        '''
 
-                            // Tạo nginx configuration
-                            sh '''
-                                cat > nginx.conf << 'EOF'
+        // Tạo nginx configuration
+        sh '''
+            cat > nginx.conf << 'EOF'
 server {
     listen 80;
     server_name _;
@@ -248,20 +275,23 @@ server {
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
     add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
     
-    # Handle React Router (SPA)
+    # Handle React Router (SPA routing)
     location / {
         try_files $uri $uri/ /index.html;
     }
     
-    # API proxy to backend services
+    # API proxy to backend services  
     location /api/ {
         proxy_pass http://api-gateway:8080/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_read_timeout 30s;
         
-        # CORS headers
+        # CORS headers for API calls
         add_header Access-Control-Allow-Origin * always;
         add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
         add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization" always;
@@ -279,9 +309,10 @@ server {
     }
     
     # Static assets caching
-    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        add_header Vary "Accept-Encoding";
     }
     
     # Gzip compression
@@ -298,50 +329,54 @@ server {
         application/javascript
         application/xml+rss
         application/json;
+        
+    # Security improvements
+    server_tokens off;
+    client_max_body_size 10M;
 }
 EOF
-                            '''
-                                
-                            // Build Docker image và push
-                            sh """
-                                echo "=== Building Docker image for frontend ==="
-                                docker build -t frontend:${BUILD_VERSION} . || {
-                                    echo "Docker build failed, checking for common issues..."
-                                    ls -la
-                                    ls -la build/ || echo "Build directory missing"
-                                    exit 1
-                                }
-                                
-                                # Tag images
-                                docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
-                                docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
-                                
-                                echo "=== Pushing frontend images to Harbor ==="
-                                docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
-                                docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
-                                
-                                echo "✅ Frontend built and pushed successfully"
-                                
-                                # Cleanup local images to save space
-                                docker rmi frontend:${BUILD_VERSION} || true
-                            """
-                        }
-                    } else {
-                        echo "⚠️ Frontend build skipped - shop directory or package.json not found"
-                        
-                        // Debug information
-                        sh '''
-                            echo "=== Current directory structure ==="
-                            pwd
-                            ls -la
-                            
-                            echo "=== Looking for shop-related directories ==="
-                            find . -name "*shop*" -type d 2>/dev/null || echo "No shop directories found"
-                            
-                            echo "=== Looking for package.json files ==="
-                            find . -name "package.json" 2>/dev/null || echo "No package.json files found"
-                        '''
-                    }
+        '''
+            
+        // Build Docker image và push
+        sh """
+            echo "=== Building Docker image for frontend ==="
+            
+            # Verify build directory exists before Docker build
+            if [ ! -d "build" ] || [ -z "\$(ls -A build 2>/dev/null)" ]; then
+                echo "❌ Build directory missing or empty"
+                ls -la
+                exit 1
+            fi
+            
+            echo "✅ Build directory verified, proceeding with Docker build..."
+            docker build -t frontend:${BUILD_VERSION} . || {
+                echo "❌ Docker build failed, debugging..."
+                echo "Current directory contents:"
+                ls -la
+                echo "Build directory contents:"
+                ls -la build/ || echo "Build directory not accessible"
+                echo "Dockerfile content:"
+                cat Dockerfile
+                exit 1
+            }
+            
+            # Tag images
+            docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
+            docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
+            
+            echo "=== Pushing frontend images to Harbor ==="
+            docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
+            docker push ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:latest
+            
+            echo "✅ Frontend built and pushed successfully"
+            
+            # Cleanup local images to save space
+            docker rmi frontend:${BUILD_VERSION} || true
+        """
+    }
+} else {
+    echo "⚠️ Frontend build skipped - shop directory or package.json not found"
+}
                     
                     // Backend services
                     def dockerServices = ['account-service', 'cart-service', 'product-service', 
