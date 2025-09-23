@@ -63,8 +63,8 @@ pipeline {
         stage('Build JAR Files') {
             steps {
                 script {
-                    def microservices = ['account-service', 'cart-service', 'product-service', 
-                                       'inventory-service', 'order-service']
+                    def microservices = [/*'account-service', */'cart-service'/*, 'product-service', 
+                                       'inventory-service', 'order-service'*/]
                     def infrastructureServices = ['config-server', 'discoveryservice', 'common-dto']
                     def allServices = microservices + infrastructureServices
                     
@@ -396,7 +396,7 @@ server {
 EOF
                             '''
                                 
-                            // Build and push Docker image
+                            // Build and push Docker imageF
                             sh """
                                 echo "=== Building Production Docker Image ==="
                                 
@@ -421,9 +421,9 @@ EOF
                     }
                     
                     // Backend services
-                    def dockerServices = ['account-service', 'cart-service', 'product-service', 
+                    def dockerServices = [/*'account-service', */'cart-service'/*, 'product-service', 
                                         'inventory-service', 'order-service',
-                                        'config-server', 'discoveryservice']
+                                        'config-server', 'discoveryservice'*/]
                     
                     def builtImages = []
                     
@@ -447,13 +447,13 @@ EOF
                             
                             dir(serviceDir) {
                                 def servicePorts = [
-                                    'account-service': '9003',
-                                    'cart-service': '9008', 
+                                    /*'account-service': '9003',*/
+                                    'cart-service': '9008'/*, 
                                     'product-service': '9001',
                                     'inventory-service': '9007',
                                     'order-service': '9011',
                                     'config-server': '9021',
-                                    'discoveryservice': '8761'
+                                    'discoveryservice': '8761'*/
                                 ]
                                 
                                 def port = servicePorts[service] ?: '8080'
