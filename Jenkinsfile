@@ -163,7 +163,7 @@
                         dir('shop') {    
                         echo "=== Building React Frontend ==="
                         sh '''
-                            docker run --rm -v $(pwd):/app -w /app node:18-alpine sh -c "npm install && npm run build"
+                            docker run --rm -v "$(pwd)":/app -w /app node:18-alpine sh -c "ls -la && npm install && npm run build"
                             
                             cat > Dockerfile << 'EOF'
 FROM nginx:alpine
