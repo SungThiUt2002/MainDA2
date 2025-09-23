@@ -545,74 +545,45 @@ ${builtImages.collect { "✅ ${it}:${BUILD_VERSION}" }.join('\n')}
             }
         }
         
-        stage('Git Tagging') {
+stage('Git Tagging') {
     steps {
         script {
             withCredentials([usernamePassword(credentialsId: 'gitea-credentials', 
                                             passwordVariable: 'GIT_PASSWORD', 
                                             usernameVariable: 'GIT_USERNAME')]) {
-                sh '''
-                    echo "=== Git Tagging Process ==="
+                sh """
+                    echo "=== Simple Git Tagging ==="
                     
-                    # Configure git user
-                    git config user.name "Jenkins CI"
+                    # Configure git
+                    git config user.name "Jenkins CI"  
                     git config user.email "jenkins@localhost"
                     
-                    # Get current remote URL
-                    REMOTE_URL=$(git remote get-url origin)
-                    echo "Current remote URL: $REMOTE_URL"
+                    # Store credentials temporarily
+                    git config credential.helper store
+                    echo "protocol=http
+host=152.42.230.92:3010
+username=${GIT_USERNAME}
+password=${GIT_PASSWORD}" | git credential approve
                     
-                    # Create authenticated URL for Gitea
-                    if [[ $REMOTE_URL == http* ]]; then
-                        # Extract the base URL and repo path
-                        BASE_URL=$(echo "$REMOTE_URL" | sed 's|http://||' | sed 's|https://||')
-                        PROTOCOL=$(echo "$REMOTE_URL" | grep -o '^http[s]*')
-                        AUTH_URL="${PROTOCOL}://${GIT_USERNAME}:${GIT_PASSWORD}@${BASE_URL}"
+                    # Create and push tag
+                    if ! git rev-parse "v${BUILD_VERSION}" >/dev/null 2>&1; then
+                        echo "Creating tag v${BUILD_VERSION}..."
+                        git tag -a "v${BUILD_VERSION}" -m "Jenkins Build #${BUILD_NUMBER}"
                         
-                        echo "Setting up authenticated remote URL..."
-                        git remote set-url origin "$AUTH_URL"
-                    fi
-                    
-                    # Check if tag already exists
-                    if ! git rev-parse "v''' + BUILD_VERSION + '''" >/dev/null 2>&1; then
-                        echo "Creating new tag: v''' + BUILD_VERSION + '''"
-                        git tag -a "v''' + BUILD_VERSION + '''" -m "Jenkins CI Build #${BUILD_NUMBER} - $(date '+%Y-%m-%d %H:%M:%S')"
-                        
-                        echo "Pushing tag to Gitea repository..."
-                        if git push origin "v''' + BUILD_VERSION + '''"; then
-                            echo "✅ Tag v''' + BUILD_VERSION + ''' created and pushed successfully"
-                        else
-                            echo "❌ Failed to push tag. Checking repository permissions..."
-                            git remote -v
-                            exit 1
-                        fi
+                        echo "Pushing tag..."
+                        git push origin "v${BUILD_VERSION}"
+                        echo "✅ Tag pushed successfully"
                     else
-                        echo "ℹ️ Tag v''' + BUILD_VERSION + ''' already exists locally"
-                        
-                        # Check if it exists on remote
-                        if git ls-remote --tags origin | grep -q "refs/tags/v''' + BUILD_VERSION + '''"; then
-                            echo "✅ Tag already exists on remote"
-                        else
-                            echo "⚠️ Tag exists locally but not on remote, pushing..."
-                            git push origin "v''' + BUILD_VERSION + '''"
-                            echo "✅ Existing tag pushed to remote"
-                        fi
+                        echo "Tag v${BUILD_VERSION} already exists"
+                        git push origin "v${BUILD_VERSION}" || echo "Tag may already be on remote"
                     fi
                     
-                    # Reset remote URL for security (remove credentials)
-                    git remote set-url origin "$REMOTE_URL"
+                    # Clean up credentials
+                    git config --unset credential.helper
                     
-                    # Final verification
-                    echo "=== Tag Verification ==="
-                    echo "Local tags containing v''' + BUILD_VERSION + ''':"
-                    git tag -l | grep "v''' + BUILD_VERSION + '''" || echo "Not found locally"
-                    
-                    echo "Remote tags containing v''' + BUILD_VERSION + ''':"
-                    git ls-remote --tags origin | grep "v''' + BUILD_VERSION + '''" || echo "Not found on remote"
-                    
-                    echo "Latest 5 tags:"
-                    git tag -l --sort=-version:refname | head -5 || echo "No tags found"
-                '''
+                    # Verify
+                    git tag -l | tail -5
+                """
             }
         }
     }
