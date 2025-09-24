@@ -237,8 +237,11 @@ stage('Git Tagging') {
                         echo "Debug - Username: ${GIT_USERNAME}"
                         echo "Debug - Password length: ${#GIT_PASSWORD}"
                         
-                        # Push với URL trực tiếp
-                        git push http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/nam/MainDA2.git "$TAG_NAME"
+                        # URL encode credentials  
+                        ENCODED_USER=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${GIT_USERNAME}'))")
+                        ENCODED_PASS=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${GIT_PASSWORD}'))")
+                        
+                        git push "http://${ENCODED_USER}:${ENCODED_PASS}@152.42.230.92:3010/nam/MainDA2.git" "$TAG_NAME"
                     fi
                 '''
             }
