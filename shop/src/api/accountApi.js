@@ -6,6 +6,8 @@ const accountAxios = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+
+
 export const getAllUsers = (token) =>
   accountAxios.get("/users/admin/allUser", {
     headers: { Authorization: `Bearer ${token}` },
