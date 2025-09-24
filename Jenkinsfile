@@ -232,7 +232,7 @@ EOF
                                 git tag -a "update_''' + BUILD_VERSION + '''" -m "Jenkins Build #''' + BUILD_NUMBER + '''"
                                 
                                 REPO_PATH=$(git remote get-url origin | sed 's|.*://[^/]*/||')
-                                git push http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/${REPO_PATH} "update_'''' + BUILD_VERSION + '''"
+                                git push http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/${REPO_PATH} "update_''' + BUILD_VERSION + '''"
                             fi
                         '''
                     }
