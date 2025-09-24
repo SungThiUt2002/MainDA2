@@ -219,13 +219,6 @@ EOF
         }
 
         stage('Git Tagging') {
-            when {
-                anyOf {
-                    expression { return env.CHANGED_SERVICES?.trim() }
-                    expression { return env.FRONTEND_CHANGED == 'true' }
-                    expression { return env.JENKINSFILE_CHANGED == 'true' }
-                }
-            }
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'gitea-credentials',
