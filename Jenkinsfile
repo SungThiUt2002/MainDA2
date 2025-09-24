@@ -248,10 +248,8 @@ EOF
             steps {
                 script {
                     sh """
-                        git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config || {
-                            cd k8s-config && git pull origin main
-                        }
-
+                        rm -rf k8s-config
+                        git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config
                         cd k8s-config
 
                         SERVICES=\$(echo "\${CHANGED_SERVICES}" | tr ',' ' ')
