@@ -298,7 +298,6 @@
 //         }
 //     }
 // }
-
 pipeline {
     agent any
 
@@ -468,6 +467,9 @@ pipeline {
                         echo "=== Building and pushing Frontend ==="
                         dir('shop') {
                             sh """
+                                echo "=== Debug shop directory ==="
+                                ls -lah
+
                                 docker run --rm -v \$(pwd):/app -w /app node:20-alpine sh -c '
                                     npm ci && npm run build
                                 '
