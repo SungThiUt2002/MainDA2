@@ -218,36 +218,41 @@ EOF
             }
         }
 
-        stage('Git Tagging') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'gitea-credentials',
-                                                    passwordVariable: 'GIT_PASSWORD',
-                                                    usernameVariable: 'GIT_USERNAME')]) {
-                        sh '''
-                            git config user.name "Jenkins CI"
-                            git config user.email "jenkins@localhost"
-                            
-                            TAG_NAME="update_''' + BUILD_VERSION + '''"
-                            
-                            if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-                                git tag -a "$TAG_NAME" -m "Jenkins Build #''' + BUILD_NUMBER + '''"
-                                
-                                ENCODED_USER=$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['GIT_USERNAME']))")
-                                ENCODED_PASS=$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['GIT_PASSWORD']))")
-
-                                GIT_URL="http://${ENCODED_USER}:${ENCODED_PASS}@152.42.230.92:3010/nam/MainDA2"
-
-                                git remote remove temp-origin 2>/dev/null || true
-                                git remote add temp-origin "$GIT_URL"
-                                git push temp-origin "$TAG_NAME"
-                                git remote remove temp-origin
-                            fi
-                        '''
-                    }
-                }
+stage('Git Tagging') {
+    steps {
+        script {
+            withCredentials([usernamePassword(credentialsId: 'gitea-credentials',
+                                            passwordVariable: 'GIT_PASSWORD',
+                                            usernameVariable: 'GIT_USERNAME')]) {
+                sh '''
+                    git config user.name "Jenkins CI"
+                    git config user.email "jenkins@localhost"
+                    
+                    TAG_NAME="update_''' + BUILD_VERSION + '''"
+                    
+                    if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+                        git tag -a "$TAG_NAME" -m "Jenkins Build #''' + BUILD_NUMBER + '''"
+                        
+                        # Sử dụng git push với authentication riêng biệt
+                        git remote remove temp-origin 2>/dev/null || true
+                        
+                        # Cách 1: Sử dụng credential helper
+                        git config credential.helper store
+                        echo "http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010" > ~/.git-credentials
+                        
+                        git remote add temp-origin "http://152.42.230.92:3010/nam/MainDA2"
+                        git push temp-origin "$TAG_NAME"
+                        
+                        # Dọn dẹp
+                        rm -f ~/.git-credentials
+                        git config --unset credential.helper
+                        git remote remove temp-origin
+                    fi
+                '''
             }
         }
+    }
+}
 
         stage('Update K8s Config Repository') {
             when {
