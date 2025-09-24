@@ -5,7 +5,7 @@ import axios from "axios";
 let isRefreshing = false;
 export const isSessionRefreshing = () => isRefreshing;
 
-// ✅ [1] Tạo instance axios
+
 const authAxios = axios.create({
   baseURL: /*process.env.REACT_APP_AUTH_API ||*/ "http://localhost:9003",
   headers: {
