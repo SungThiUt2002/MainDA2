@@ -228,11 +228,11 @@ EOF
                             git config user.name "Jenkins CI"
                             git config user.email "jenkins@localhost"
                             
-                            if ! git rev-parse "v''' + BUILD_VERSION + '''" >/dev/null 2>&1; then
-                                git tag -a "update_''' + BUILD_VERSION + '''" -m "Jenkins Build #''' + BUILD_NUMBER + '''"
-                                
-                                REPO_PATH=$(git remote get-url origin | sed 's|.*://[^/]*/||')
-                                git push http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/${REPO_PATH} "update_''' + BUILD_VERSION + '''"
+                            TAG_NAME="update_''' + BUILD_VERSION + '''"
+                            
+                            if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+                                git tag -a "$TAG_NAME" -m "Jenkins Build #''' + BUILD_NUMBER + '''"
+                                git push http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/nam/MainDA2.git "$TAG_NAME"
                             fi
                         '''
                     }
