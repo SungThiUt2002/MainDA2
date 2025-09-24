@@ -236,7 +236,7 @@ EOF
                                 ENCODED_USER=$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['GIT_USERNAME']))")
                                 ENCODED_PASS=$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['GIT_PASSWORD']))")
 
-                                GIT_URL="http://${ENCODED_USER}:${ENCODED_PASS}@152.42.230.92:3010/nam/MainDA2.git"
+                                GIT_URL="http://${ENCODED_USER}:${ENCODED_PASS}@152.42.230.92:3010/nam/MainDA2"
 
                                 git remote remove temp-origin 2>/dev/null || true
                                 git remote add temp-origin "$GIT_URL"
