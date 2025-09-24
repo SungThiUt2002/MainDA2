@@ -7,7 +7,7 @@ spring:
     name: product-service
 
   config:
-    import: optional:configserver:http://localhost:9021  # import config từ Config Server
+    import: optional:configserver:${SPRING_CLOUD_CONFIG_URI:http://localhost:9021}  # import config từ Config Server
   cloud:
     config:
       fail-fast: true
