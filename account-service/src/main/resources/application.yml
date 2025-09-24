@@ -52,9 +52,7 @@ spring:
 #  # expiration: 86400000
 #  # refresh-expiration: 604800000
 #
-#logging:
-#  level:
-#    com.stu.account_service: DEBUG
+
 #
 #security:
 #  login:
