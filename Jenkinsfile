@@ -229,7 +229,9 @@ stage('Git Tagging') {
                     
                     if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
                         git tag -a "$TAG_NAME" -m "Build #''' + BUILD_NUMBER + '''"
-                        git push http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/nam/MainDA2 "$TAG_NAME"
+                        git remote add temp http://152.42.230.92:3010/nam/MainDA2.git
+                        git -c "credential.username=${GIT_USERNAME}" -c "credential.helper=!f(){ echo password=${GIT_PASSWORD}; }; f" push temp "$TAG_NAME"
+                        git remote remove temp
                     fi
                 '''
             }
