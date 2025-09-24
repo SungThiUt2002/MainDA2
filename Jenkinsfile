@@ -233,12 +233,13 @@ EOF
                             if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
                                 git tag -a "$TAG_NAME" -m "Jenkins Build #''' + BUILD_NUMBER + '''"
                                 
-                                GIT_URL="http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/nam/MainDA2.git"
-                                GIT_URL_CLEAN=$(echo "$GIT_URL" | sed 's|.*://[^/]*/||')
-                                # Xóa remote cũ nếu tồn tại
+                                ENCODED_USER=$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['GIT_USERNAME']))")
+                                ENCODED_PASS=$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['GIT_PASSWORD']))")
+
+                                GIT_URL="http://${ENCODED_USER}:${ENCODED_PASS}@152.42.230.92:3010/nam/MainDA2.git"
+
                                 git remote remove temp-origin 2>/dev/null || true
-                                
-                                git remote add temp-origin "$GIT_URL_CLEAN"
+                                git remote add temp-origin "$GIT_URL"
                                 git push temp-origin "$TAG_NAME"
                                 git remote remove temp-origin
                             fi
