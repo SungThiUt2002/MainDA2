@@ -221,9 +221,7 @@ EOF
 stage('Git Tagging') {
     steps {
         script {
-            withCredentials([usernamePassword(credentialsId: 'gitea-credentials',
-                                            passwordVariable: 'GIT_PASSWORD',
-                                            usernameVariable: 'GIT_USERNAME')]) {
+            withCredentials([string(credentialsId: 'gitea-token', variable: 'GIT_TOKEN')]) {
                 sh '''
                     git config user.name "Jenkins CI"
                     git config user.email "jenkins@localhost"
@@ -232,16 +230,7 @@ stage('Git Tagging') {
                     
                     if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
                         git tag -a "$TAG_NAME" -m "Build #''' + BUILD_NUMBER + '''"
-                        
-                        # Debug credentials
-                        echo "Debug - Username: ${GIT_USERNAME}"
-                        echo "Debug - Password length: ${#GIT_PASSWORD}"
-                        
-                        # URL encode credentials  
-                        ENCODED_USER=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${GIT_USERNAME}'))")
-                        ENCODED_PASS=$(python3 -c "import urllib.parse; print(urllib.parse.quote('${GIT_PASSWORD}'))")
-                        
-                        git push "http://${ENCODED_USER}:${ENCODED_PASS}@152.42.230.92:3010/nam/MainDA2.git" "$TAG_NAME"
+                        git push http://nam:${GIT_TOKEN}@152.42.230.92:3010/nam/MainDA2.git "$TAG_NAME"
                     fi
                 '''
             }
