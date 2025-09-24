@@ -230,7 +230,7 @@ stage('Git Tagging') {
                     
                     if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
                         git tag -a "$TAG_NAME" -m "Build #''' + BUILD_NUMBER + '''"
-                        git push http://nam:${GIT_TOKEN}@152.42.230.92:3010/nam/MainDA2.git "$TAG_NAME"
+                        git push https://nam:${GIT_TOKEN}@github.com/SungThiUt2002/MainDA2.git "$TAG_NAME"
                     fi
                 '''
             }
