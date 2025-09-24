@@ -10,6 +10,7 @@ pipeline {
         JAVA_HOME = "/opt/java/openjdk"
         HARBOR_REGISTRY = "152.42.230.92:8082"  
         HARBOR_PROJECT = "doan_devsecops"
+        GIT_REPO_URL = "http://152.42.230.92:3010"
     }
     
     stages {
@@ -225,23 +226,46 @@ EOF
                     withCredentials([usernamePassword(credentialsId: 'gitea-credentials',
                                                     passwordVariable: 'GIT_PASSWORD',
                                                     usernameVariable: 'GIT_USERNAME')]) {
-                        sh """
+                        sh '''
                             echo "=== Simple Git Tagging ==="
+                            
+                            # Thiết lập git config
                             git config user.name "Jenkins CI"
                             git config user.email "jenkins@localhost"
-                            git config credential.helper store
-                            echo "protocol=http\\nhost=152.42.230.92:3010\\nusername=\${GIT_USERNAME}\\npassword=\${GIT_PASSWORD}" | git credential approve
-
-                            if ! git rev-parse "v${BUILD_VERSION}" >/dev/null 2>&1; then
-                                echo "Creating tag v${BUILD_VERSION}..."
-                                git tag -a "v${BUILD_VERSION}" -m "Jenkins Build #${BUILD_NUMBER}"
-                                git push origin "v${BUILD_VERSION}"
+                            
+                            # Lấy URL gốc của repository và thêm credentials
+                            REPO_URL=$(git config --get remote.origin.url)
+                            
+                            # Loại bỏ http:// hoặc https:// nếu có
+                            CLEAN_URL=$(echo $REPO_URL | sed 's|^https\\?://||')
+                            
+                            # Tạo URL với credentials
+                            AUTHENTICATED_URL="http://${GIT_USERNAME}:${GIT_PASSWORD}@${CLEAN_URL}"
+                            
+                            # Thiết lập remote với credentials
+                            git remote set-url origin "$AUTHENTICATED_URL"
+                            
+                            # Kiểm tra xem tag đã tồn tại chưa
+                            if ! git rev-parse "${BUILD_VERSION}" >/dev/null 2>&1; then
+                                echo "Creating tag ${BUILD_VERSION}..."
+                                git tag -a "${BUILD_VERSION}" -m "Jenkins Build #${BUILD_NUMBER}"
+                                
+                                # Push tag
+                                echo "Pushing tag to repository..."
+                                git push origin "${BUILD_VERSION}" || {
+                                    echo "Failed to push tag, trying to fetch and retry..."
+                                    git fetch origin
+                                    git push origin "${BUILD_VERSION}"
+                                }
+                                
                                 echo "✅ Tag pushed successfully"
                             else
-                                echo "Tag v${BUILD_VERSION} already exists"
+                                echo "Tag ${BUILD_VERSION} already exists"
                             fi
-                            git config --unset credential.helper
-                        """
+                            
+                            # Reset lại URL gốc để bảo mật
+                            git remote set-url origin "$REPO_URL"
+                        '''
                     }
                 }
             }
@@ -256,32 +280,64 @@ EOF
             }
             steps {
                 script {
-                    sh '''
-                        git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config || {
-                            cd k8s-config && git pull origin main
-                        }
-
-                        cd k8s-config
-
-                        for service in ${CHANGED_SERVICES//,/ }; do
-                            if [ "$service" != "common-dto" ]; then
-                                find . -name "*.yaml" | grep -i "$service" | while read file; do
-                                    sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/\\([^:]*\\):.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/\\1:''' + BUILD_VERSION + '''|g" "$file"
+                    withCredentials([usernamePassword(credentialsId: 'gitea-credentials',
+                                                    passwordVariable: 'GIT_PASSWORD',
+                                                    usernameVariable: 'GIT_USERNAME')]) {
+                        sh '''
+                            echo "=== Updating K8s Configuration Repository ==="
+                            
+                            # Xóa thư mục k8s-config nếu tồn tại
+                            rm -rf k8s-config
+                            
+                            # Clone repository với credentials
+                            K8S_REPO_URL="http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/nam/microservices-k8s.git"
+                            git clone "$K8S_REPO_URL" k8s-config
+                            
+                            cd k8s-config
+                            
+                            # Cập nhật images cho các services đã thay đổi
+                            for service in ${CHANGED_SERVICES//,/ }; do
+                                if [ "$service" != "common-dto" ]; then
+                                    echo "Updating images for service: $service"
+                                    find . -name "*.yaml" | grep -i "$service" | while read file; do
+                                        if [ -f "$file" ]; then
+                                            sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/\\([^:]*\\):.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/\\1:''' + BUILD_VERSION + '''|g" "$file"
+                                            echo "Updated $file"
+                                        fi
+                                    done
+                                fi
+                            done
+                            
+                            # Cập nhật frontend nếu có thay đổi
+                            if [ "${FRONTEND_CHANGED}" = "true" ]; then
+                                echo "Updating frontend images"
+                                find . -name "*.yaml" | grep -i "frontend" | while read file; do
+                                    if [ -f "$file" ]; then
+                                        sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/frontend:.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/frontend:''' + BUILD_VERSION + '''|g" "$file"
+                                        echo "Updated frontend in $file"
+                                    fi
                                 done
                             fi
-                        done
-
-                        if [ "${FRONTEND_CHANGED}" = "true" ]; then
-                            find . -name "*.yaml" | grep -i "frontend" | while read file; do
-                                sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/frontend:.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/frontend:''' + BUILD_VERSION + '''|g" "$file"
-                            done
-                        fi
-
-                        git config user.name "Jenkins CI"
-                        git config user.email "jenkins@localhost"
-                        git add . && git commit -m "Update images to ''' + BUILD_VERSION + '''" && git push origin main
-                        cd .. && rm -rf k8s-config
-                    '''
+                            
+                            # Commit và push thay đổi
+                            git config user.name "Jenkins CI"
+                            git config user.email "jenkins@localhost"
+                            
+                            # Kiểm tra xem có thay đổi nào không
+                            if git diff --quiet; then
+                                echo "No changes to commit"
+                            else
+                                git add .
+                                git commit -m "Update images to ''' + BUILD_VERSION + '''"
+                                git push origin main
+                                echo "✅ K8s configuration updated successfully"
+                            fi
+                            
+                            # Cleanup
+                            cd ..
+                            rm -rf k8s-config
+                        '''
+                    }
                 }
             }
         }
@@ -293,17 +349,27 @@ EOF
                 echo "=== Pipeline Cleanup ==="
                 sh 'pkill -f "discoveryservice-.*.jar" || true'
                 sh 'pkill -f "config-server-.*.jar" || true'
+                
                 try {
                     archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
                 } catch (Exception e) {
                     echo "No JAR files to archive"
                 }
+                
                 sh '''
                     echo "Cleaning up unused Docker images..."
                     docker image prune -f --filter "dangling=true" || true
                     docker volume prune -f || true
                 '''
             }
+        }
+        
+        failure {
+            echo "❌ Pipeline failed. Kiểm tra logs để xác định nguyên nhân."
+        }
+        
+        success {
+            echo "✅ Pipeline completed successfully!"
         }
     }
 }
