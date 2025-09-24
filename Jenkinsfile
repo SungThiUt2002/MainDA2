@@ -298,8 +298,6 @@
 //         }
 //     }
 // }
-
-
 pipeline {
     agent any
 
@@ -464,11 +462,15 @@ pipeline {
                         sh "echo \"\${HARBOR_PASSWORD}\" | docker login http://${HARBOR_REGISTRY} -u \"\${HARBOR_USERNAME}\" --password-stdin"
                     }
 
+                    // ==== Build Frontend bằng Node container ====
                     if (env.FRONTEND_CHANGED == 'true') {
                         echo "=== Building and pushing Frontend ==="
                         dir('shop') {
-                            sh 'npm ci && npm run build'
                             sh """
+                                docker run --rm -v \$(pwd):/app -w /app node:20-alpine sh -c '
+                                    npm ci && npm run build
+                                '
+
                                 # Tạo Dockerfile kèm default.conf
                                 cat > Dockerfile <<EOF
 FROM nginx:alpine
@@ -505,6 +507,7 @@ EOCONF
                         }
                     }
 
+                    // ==== Build Backend Services ====
                     if (env.CHANGED_SERVICES?.trim()) {
                         def servicesToBuild = env.CHANGED_SERVICES.split(',')
                         servicesToBuild.each { service ->

@@ -2,7 +2,6 @@
 import { setRefreshing } from "../store/loadingStore"; // ở đầu file
 import axios from "axios";
 
-// ✅ [NEW] Global refresh state for UI loader
 let isRefreshing = false;
 export const isSessionRefreshing = () => isRefreshing;
 
