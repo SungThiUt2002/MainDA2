@@ -7,14 +7,14 @@ spring:
 #    name: order-service
 
   datasource:
-    url: jdbc:mysql://localhost:3306/order_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
-    username: root
-    password: root
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/order_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     show-sql: true
     properties:
       hibernate:
@@ -22,7 +22,7 @@ spring:
         format_sql: true
 
   kafka:
-    bootstrap-servers: localhost:19092,localhost:19093,localhost:19094
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BROKERS:localhost:9092}}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -40,23 +40,28 @@ spring:
             trusted:
               packages: "*"
 
+#app:
+#  product-service:
+#    url: http://localhost:9001
+#  inventory-service:
+#    url: http://localhost:9007
+#  account-service:
+#    url: http://localhost:9003
 app:
   product-service:
-    url: http://localhost:9001
+    url: ${APP_PRODUCT_SERVICE_URL:http://localhost:9001}
   inventory-service:
-    url: http://localhost:9007
+    url: ${APP_INVENTORY_SERVICE_URL:http://localhost:9007}
   account-service:
-    url: http://localhost:9003
-#  profile-service:
-#    url: http://localhost:9012
+    url: ${APP_ACCOUNT_SERVICE_URL:http://localhost:9003}
 
-
-#jwt:
-#  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-
-# Eureka configuration
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-    enabled: true
+#
+##jwt:
+##  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+#
+## Eureka configuration
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
+#    enabled: true
