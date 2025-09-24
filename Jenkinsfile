@@ -38,7 +38,6 @@ pipeline {
                 script {
                     echo "=== Detecting changes by comparing with the previous commit ==="
 
-                    // Sửa đổi: Sử dụng lệnh git diff HEAD~1 HEAD
                     def changedFiles = sh(script: "git diff --name-only HEAD~1 HEAD", returnStdout: true).trim().split('\n')
 
                     echo "Changed files: ${changedFiles.join(', ')}"
@@ -218,68 +217,68 @@ EOF
             }
         }
 
-stage('Git Tagging') {
-    steps {
-        script {
-            withCredentials([string(credentialsId: 'gitea-token', variable: 'GIT_TOKEN')]) {
-                sh '''
-                    git config user.name "Jenkins CI"
-                    git config user.email "jenkins@localhost"
-                    
-                    TAG_NAME="update_''' + BUILD_VERSION + '''"
-                    
-                    if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-                        git tag -a "$TAG_NAME" -m "Build #''' + BUILD_NUMBER + '''"
-                        git push https://nam:${GIT_TOKEN}@github.com/SungThiUt2002/MainDA2.git "$TAG_NAME"
-                    fi
-                '''
+        stage('Git Tagging') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'gitea-token', variable: 'GIT_TOKEN')]) {
+                        sh '''
+                            git config user.name "Jenkins CI"
+                            git config user.email "jenkins@localhost"
+                            
+                            TAG_NAME="update_''' + BUILD_VERSION + '''"
+                            
+                            if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+                                git tag -a "$TAG_NAME" -m "Build #''' + BUILD_NUMBER + '''"
+                                git push https://nam:${GIT_TOKEN}@github.com/SungThiUt2002/MainDA2.git "$TAG_NAME"
+                            fi
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Update K8s Config Repository') {
+            when {
+                anyOf {
+                    expression { return env.CHANGED_SERVICES?.trim() }
+                    expression { return env.FRONTEND_CHANGED == 'true' }
+                    expression { return env.JENKINSFILE_CHANGED == 'true' }
+                }
+            }
+            steps {
+                script {
+                    sh """
+                        git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config || {
+                            cd k8s-config && git pull origin main
+                        }
+
+                        cd k8s-config
+
+                        SERVICES=\$(echo "\${CHANGED_SERVICES}" | tr ',' ' ')
+                        
+                        for service in \$SERVICES; do
+                            if [ "\$service" != "common-dto" ]; then
+                                find . -name "*.yaml" | grep -i "\$service" | while read file; do
+                                    sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/\\([^:]*\\):.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/\\1:''' + BUILD_VERSION + '''|g" "\$file"
+                                done
+                            fi
+                        done
+
+                        if [ "\${FRONTEND_CHANGED}" = "true" ]; then
+                            find . -name "*.yaml" | grep -i "frontend" | while read file; do
+                                sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/frontend:.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/frontend:''' + BUILD_VERSION + '''|g" "\$file"
+                            done
+                        fi
+
+                        git config user.name "Jenkins CI"
+                        git config user.email "jenkins@localhost"
+                        git add . && git commit -m "Update images to ''' + BUILD_VERSION + '''" && git push origin main
+                        cd .. && rm -rf k8s-config
+                    """
+                }
             }
         }
     }
-}
-
-stage('Update K8s Config Repository') {
-    when {
-        anyOf {
-            expression { return env.CHANGED_SERVICES?.trim() }
-            expression { return env.FRONTEND_CHANGED == 'true' }
-            expression { return env.JENKINSFILE_CHANGED == 'true' }
-        }
-    }
-    steps {
-        script {
-            sh """
-                git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config || {
-                    cd k8s-config && git pull origin main
-                }
-
-                cd k8s-config
-
-                # Sử dụng tr thay cho bash substitution
-                SERVICES=\$(echo "\${CHANGED_SERVICES}" | tr ',' ' ')
-                
-                for service in \$SERVICES; do
-                    if [ "\$service" != "common-dto" ]; then
-                        find . -name "*.yaml" | grep -i "\$service" | while read file; do
-                            sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/\\([^:]*\\):.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/\\1:''' + BUILD_VERSION + '''|g" "\$file"
-                        done
-                    fi
-                done
-
-                if [ "\${FRONTEND_CHANGED}" = "true" ]; then
-                    find . -name "*.yaml" | grep -i "frontend" | while read file; do
-                        sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/frontend:.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/frontend:''' + BUILD_VERSION + '''|g" "\$file"
-                    done
-                fi
-
-                git config user.name "Jenkins CI"
-                git config user.email "jenkins@localhost"
-                git add . && git commit -m "Update images to ''' + BUILD_VERSION + '''" && git push origin main
-                cd .. && rm -rf k8s-config
-            """
-        }
-    }
-}
 
     post {
         always {
