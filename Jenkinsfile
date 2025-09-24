@@ -53,12 +53,15 @@ pipeline {
                     }
 
                     def frontendChanged = changedFiles.any { it.startsWith("shop/") || it == "shop/package.json" }
+                    def jenkinsFileChanged = changedFiles.any { it == "Jenkinsfile" }
 
                     env.CHANGED_SERVICES = changedBackendServices.join(',')
                     env.FRONTEND_CHANGED = frontendChanged.toString()
+                    env.JENKINSFILE_CHANGED = jenkinsFileChanged.toString()
 
                     echo "Detected changed backend services: ${env.CHANGED_SERVICES ?: 'None'}"
                     echo "Frontend changed? ${env.FRONTEND_CHANGED}"
+                    echo "Jenkinsfile changed? ${env.JENKINSFILE_CHANGED}"
                 }
             }
         }
@@ -68,6 +71,7 @@ pipeline {
                 anyOf {
                     expression { return env.CHANGED_SERVICES?.trim() }
                     expression { return env.FRONTEND_CHANGED == 'true' }
+                    expression { return env.JENKINSFILE_CHANGED == 'true' }
                 }
             }
             steps {
@@ -147,6 +151,7 @@ pipeline {
                 anyOf {
                     expression { return env.CHANGED_SERVICES?.trim() }
                     expression { return env.FRONTEND_CHANGED == 'true' }
+                    expression { return env.JENKINSFILE_CHANGED == 'true' }
                 }
             }
             steps {
@@ -218,6 +223,7 @@ EOF
                 anyOf {
                     expression { return env.CHANGED_SERVICES?.trim() }
                     expression { return env.FRONTEND_CHANGED == 'true' }
+                    expression { return env.JENKINSFILE_CHANGED == 'true' }
                 }
             }
             steps {
@@ -226,21 +232,15 @@ EOF
                                                     passwordVariable: 'GIT_PASSWORD',
                                                     usernameVariable: 'GIT_USERNAME')]) {
                         sh """
-                            echo "=== Simple Git Tagging ==="
                             git config user.name "Jenkins CI"
                             git config user.email "jenkins@localhost"
-                            git config credential.helper store
-                            echo "protocol=http\\nhost=152.42.230.92:3010\\nusername=\${GIT_USERNAME}\\npassword=\${GIT_PASSWORD}" | git credential approve
-
+                            
                             if ! git rev-parse "v${BUILD_VERSION}" >/dev/null 2>&1; then
-                                echo "Creating tag v${BUILD_VERSION}..."
                                 git tag -a "v${BUILD_VERSION}" -m "Jenkins Build #${BUILD_NUMBER}"
+                                
+                                git remote set-url origin http://\${GIT_USERNAME}:\${GIT_PASSWORD}@152.42.230.92:3010/\$(git remote get-url origin | sed 's|.*://[^/]*/||')
                                 git push origin "v${BUILD_VERSION}"
-                                echo "✅ Tag pushed successfully"
-                            else
-                                echo "Tag v${BUILD_VERSION} already exists"
                             fi
-                            git config --unset credential.helper
                         """
                     }
                 }
@@ -252,28 +252,29 @@ EOF
                 anyOf {
                     expression { return env.CHANGED_SERVICES?.trim() }
                     expression { return env.FRONTEND_CHANGED == 'true' }
+                    expression { return env.JENKINSFILE_CHANGED == 'true' }
                 }
             }
             steps {
                 script {
-                    sh '''
+                    sh """
                         git clone http://152.42.230.92:3010/nam/microservices-k8s.git k8s-config || {
                             cd k8s-config && git pull origin main
                         }
 
                         cd k8s-config
 
-                        for service in ${CHANGED_SERVICES//,/ }; do
-                            if [ "$service" != "common-dto" ]; then
-                                find . -name "*.yaml" | grep -i "$service" | while read file; do
-                                    sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/\\([^:]*\\):.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/\\1:''' + BUILD_VERSION + '''|g" "$file"
+                        for service in \${CHANGED_SERVICES//,/ }; do
+                            if [ "\$service" != "common-dto" ]; then
+                                find . -name "*.yaml" | grep -i "\$service" | while read file; do
+                                    sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/\\([^:]*\\):.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/\\1:''' + BUILD_VERSION + '''|g" "\$file"
                                 done
                             fi
                         done
 
-                        if [ "${FRONTEND_CHANGED}" = "true" ]; then
+                        if [ "\${FRONTEND_CHANGED}" = "true" ]; then
                             find . -name "*.yaml" | grep -i "frontend" | while read file; do
-                                sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/frontend:.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/frontend:''' + BUILD_VERSION + '''|g" "$file"
+                                sed -i "s|image: .*/''' + HARBOR_PROJECT + '''/frontend:.*|image: ''' + HARBOR_REGISTRY + '''/''' + HARBOR_PROJECT + '''/frontend:''' + BUILD_VERSION + '''|g" "\$file"
                             done
                         fi
 
@@ -281,7 +282,7 @@ EOF
                         git config user.email "jenkins@localhost"
                         git add . && git commit -m "Update images to ''' + BUILD_VERSION + '''" && git push origin main
                         cd .. && rm -rf k8s-config
-                    '''
+                    """
                 }
             }
         }
