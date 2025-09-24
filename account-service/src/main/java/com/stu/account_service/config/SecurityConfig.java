@@ -73,9 +73,6 @@ KHi SecurityFilterChain được kích hoạt nó sẽ khởi tạo chuỗi
 
     exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint) – gán entry point xử lý lỗi xác thự
 
- */
-
-// VÍ DỤ CỤ THỂ
 
 /// //////
 /*
