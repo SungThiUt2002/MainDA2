@@ -225,13 +225,20 @@ stage('Git Tagging') {
                                             passwordVariable: 'GIT_PASSWORD',
                                             usernameVariable: 'GIT_USERNAME')]) {
                 sh '''
+                    git config user.name "Jenkins CI"
+                    git config user.email "jenkins@localhost"
+                    
                     TAG_NAME="update_''' + BUILD_VERSION + '''"
                     
                     if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
                         git tag -a "$TAG_NAME" -m "Build #''' + BUILD_NUMBER + '''"
-                        git remote add temp http://152.42.230.92:3010/nam/MainDA2.git
-                        git -c "credential.username=${GIT_USERNAME}" -c "credential.helper=!f(){ echo password=${GIT_PASSWORD}; }; f" push temp "$TAG_NAME"
-                        git remote remove temp
+                        
+                        # Debug credentials
+                        echo "Debug - Username: ${GIT_USERNAME}"
+                        echo "Debug - Password length: ${#GIT_PASSWORD}"
+                        
+                        # Push với URL trực tiếp
+                        git push http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/nam/MainDA2.git "$TAG_NAME"
                     fi
                 '''
             }
