@@ -234,7 +234,7 @@ EOF
                                 git tag -a "$TAG_NAME" -m "Jenkins Build #''' + BUILD_NUMBER + '''"
                                 
                                 GIT_URL="http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/nam/MainDA2.git"
-                                GIT_URL_CLEAN=$(echo "$GIT_URL" | sed 's:/*$::')
+                                GIT_URL_CLEAN=$(echo "$GIT_URL" | sed 's|.*://[^/]*/||')
                                 # Xóa remote cũ nếu tồn tại
                                 git remote remove temp-origin 2>/dev/null || true
                                 
