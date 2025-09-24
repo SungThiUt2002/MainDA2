@@ -238,8 +238,10 @@ EOF
                             if ! git rev-parse "v''' + BUILD_VERSION + '''" >/dev/null 2>&1; then
                                 git tag -a "v''' + BUILD_VERSION + '''" -m "Jenkins Build #''' + BUILD_NUMBER + '''"
                                 
-                                REPO_PATH=$(git remote get-url origin | sed 's|.*://[^/]*/||')
-                                git remote set-url origin "http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/${REPO_PATH}"
+                                REPO_PATH=$(git remote get-url origin | sed 's|.*://[^/]*/||' | sed 's|/$||')
+                                NEW_URL="http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/${REPO_PATH}"
+                                echo "Setting remote URL to: http://${GIT_USERNAME}:***@152.42.230.92:3010/${REPO_PATH}"
+                                git remote set-url origin "${NEW_URL}"
                                 git push origin "v''' + BUILD_VERSION + '''"
                             fi
                         '''
