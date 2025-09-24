@@ -232,7 +232,10 @@ EOF
                             
                             if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
                                 git tag -a "$TAG_NAME" -m "Jenkins Build #''' + BUILD_NUMBER + '''"
-                                git push http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/nam/MainDA2.git "$TAG_NAME"
+                                
+                                git remote add temp-origin http://${GIT_USERNAME}:${GIT_PASSWORD}@152.42.230.92:3010/nam/MainDA2.git
+                                git push temp-origin "$TAG_NAME"
+                                git remote remove temp-origin
                             fi
                         '''
                     }
