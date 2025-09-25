@@ -1,5 +1,7 @@
 import axios from "axios";
-const ACCOUNT_API_BASE_URL = "https://167.172.88.205"; // Đổi port nếu khác
+const ACCOUNT_API_BASE_URL =
+  (typeof process !== "undefined" && process.env?.REACT_APP_API_BASE)
+    || (typeof window !== "undefined" ? window.location.origin : "");
 
 const accountAxios = axios.create({
   baseURL: ACCOUNT_API_BASE_URL,

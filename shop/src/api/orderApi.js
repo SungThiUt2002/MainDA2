@@ -2,21 +2,21 @@
 import { createAxiosInstance } from "./axiosInstance";
 
 const axiosOrder = createAxiosInstance({
-  baseURL: "http://167.172.88.205/apis/v1/users/orders",
+  baseURL: (typeof window !== "undefined" ? window.location.origin : "") + "/apis/v1/users/orders",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
 const axiosOrderAdmin = createAxiosInstance({
-  baseURL: "http://167.172.88.205/apis/v1/admin/orders",
+  baseURL: (typeof window !== "undefined" ? window.location.origin : "") + "/apis/v1/admin/orders",
   headers: {
     "Content-Type": "application/json",
   },
 });
 
 const axiosAccount = createAxiosInstance({
-  baseURL: "http://167.172.88.205/api",
+  baseURL: (typeof window !== "undefined" ? window.location.origin : "") + "/api",
   headers: {
     "Content-Type": "application/json",
   },

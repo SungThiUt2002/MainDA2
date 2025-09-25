@@ -4,7 +4,7 @@ import { createAxiosInstance, createPublicAxiosInstance } from "./axiosInstance"
 
 // ✅ Instance với authentication (cho user đã đăng nhập)
 const axiosCart = createAxiosInstance({
-  baseURL: "http://167.172.88.205/api/carts",
+  baseURL: (typeof window !== "undefined" ? window.location.origin : "") + "/api/carts",
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,7 +12,7 @@ const axiosCart = createAxiosInstance({
 
 // ✅ Instance không yêu cầu authentication (cho guest users)
 const axiosCartPublic = createPublicAxiosInstance({
-  baseURL: "http://167.172.88.205/api/carts",
+  baseURL: (typeof window !== "undefined" ? window.location.origin : "") + "/api/carts",
   headers: {
     "Content-Type": "application/json",
   },
@@ -52,7 +52,7 @@ export const fetchProductImage = async (productId) => {
 
   try {
     // Sửa lại endpoint để khớp với controller
-    const res = await fetch(`http://localhost:9001/api/v1/product-images/product/${productId}/thumbnail`);
+    const res = await fetch(`${window.location.origin}/api/v1/product-images/product/${productId}/thumbnail`);
     
     if (!res.ok) {
       console.warn(`❌ Không tìm thấy ảnh thumbnail cho product ${productId}:`, res.status);
@@ -77,7 +77,7 @@ export const fetchProductImage = async (productId) => {
     
     if (data?.url) {
       // Tạo URL đầy đủ cho ảnh
-      const imageUrl = `http://localhost:9001/images/${data.url}`;
+      const imageUrl = `${window.location.origin}/images/${data.url}`;
       return imageUrl;
     } else {
       console.warn("❌ Không có URL trong response:", data);

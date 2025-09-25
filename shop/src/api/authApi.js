@@ -6,8 +6,9 @@ let isRefreshing = false;
 export const isSessionRefreshing = () => isRefreshing;
 
 
+const API_BASE = typeof window !== "undefined" ? window.location.origin : "";
 const authAxios = axios.create({
-  baseURL: /*process.env.REACT_APP_AUTH_API ||*/ "https://167.172.88.205",
+  baseURL: /*process.env.REACT_APP_AUTH_API ||*/ API_BASE,
   headers: {
     "Content-Type": "application/json",
   },
