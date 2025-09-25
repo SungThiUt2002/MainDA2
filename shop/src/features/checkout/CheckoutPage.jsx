@@ -27,9 +27,25 @@ const CheckoutPage = () => {
   });
 
   useEffect(() => {
-    // Lấy thông tin đơn hàng từ location state (sau khi checkout cart)
+    // Lấy thông tin đơn hàng từ location state (sau khi checkout cart hoặc tiếp tục điền thông tin)
     if (location.state?.orderData) {
       setOrderData(location.state.orderData);
+      
+      // Nếu đang tiếp tục điền thông tin, pre-fill form với dữ liệu có sẵn
+      if (location.state?.isContinuing) {
+        const order = location.state.orderData;
+        setFormData(prev => ({
+          ...prev,
+          receiverName: order.receiverName || "",
+          receiverPhone: order.receiverPhone || "",
+          province: order.province || "",
+          district: order.district || "",
+          ward: order.ward || "",
+          streetAddress: order.streetAddress || "",
+          note: order.note || "",
+          paymentMethod: order.paymentMethod || "COD"
+        }));
+      }
     } else {
       // Nếu không có order data, redirect về cart
       alert("Không có thông tin đơn hàng. Vui lòng thực hiện checkout từ giỏ hàng.");
@@ -156,14 +172,26 @@ const CheckoutPage = () => {
       <nav className="breadcrumb">
         <span onClick={() => navigate("/")} className="breadcrumb-link">Trang chủ</span>
         <span className="breadcrumb-separator">/</span>
-        <span onClick={() => navigate("/cart")} className="breadcrumb-link">Giỏ hàng</span>
-        <span className="breadcrumb-separator">/</span>
-        <span className="breadcrumb-current">Thanh toán</span>
+        {location.state?.isContinuing ? (
+          <>
+            <span onClick={() => navigate("/profile")} className="breadcrumb-link">Tài khoản</span>
+            <span className="breadcrumb-separator">/</span>
+            <span className="breadcrumb-current">Tiếp tục đơn hàng</span>
+          </>
+        ) : (
+          <>
+            <span onClick={() => navigate("/cart")} className="breadcrumb-link">Giỏ hàng</span>
+            <span className="breadcrumb-separator">/</span>
+            <span className="breadcrumb-current">Thanh toán</span>
+          </>
+        )}
       </nav>
 
       <div className="checkout-page">
         <div className="container">
-          <h2 className="checkout-title">💳 Thanh toán đơn hàng</h2>
+          <h2 className="checkout-title">
+            {location.state?.isContinuing ? "✏️ Tiếp tục điền thông tin đơn hàng" : "💳 Thanh toán đơn hàng"}
+          </h2>
 
           {error && (
             <div className="error-message">

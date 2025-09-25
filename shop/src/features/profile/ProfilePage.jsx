@@ -129,6 +129,16 @@ const ProfilePage = () => {
     }
   };
 
+  const handleContinueOrder = (order) => {
+    // Chuyển đến trang checkout để tiếp tục điền thông tin
+    navigate("/checkout", { 
+      state: { 
+        orderData: order,
+        isContinuing: true 
+      } 
+    });
+  };
+
   // Handle view order details
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
@@ -807,7 +817,15 @@ const ProfilePage = () => {
                                    >
                                      👁️ Xem chi tiết
                                    </button>
-                                           {(order.status === 'PENDING_PAYMENT' || order.status === 'CREATED' || order.status === 'CONFIRM_INFORMATION' || order.status === 'PENDING_CONFIRMATION' || order.status === 'CONFIRMED') && (
+                                   {(order.status === 'CREATED' || order.status === 'CONFIRM_INFORMATION') && (
+                                     <button
+                                       className="action-btn continue-btn"
+                                       onClick={() => handleContinueOrder(order)}
+                                     >
+                                       ✏️ Tiếp tục điền thông tin
+                                     </button>
+                                   )}
+                                   {(order.status === 'PENDING_PAYMENT' || order.status === 'CREATED' || order.status === 'CONFIRM_INFORMATION' || order.status === 'PENDING_CONFIRMATION' || order.status === 'CONFIRMED') && (
           <button
             className="action-btn cancel-btn"
             onClick={() => handleCancelOrder(order.id)}
@@ -952,6 +970,17 @@ const ProfilePage = () => {
             </div>
 
             <div className="modal-footer">
+                      {(selectedOrder.status === 'CREATED' || selectedOrder.status === 'CONFIRM_INFORMATION') && (
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => {
+                            handleContinueOrder(selectedOrder);
+                            setShowOrderDetail(false);
+                          }}
+                        >
+                          ✏️ Tiếp tục điền thông tin
+                        </button>
+                      )}
                       {(selectedOrder.status === 'PENDING_PAYMENT' || selectedOrder.status === 'CREATED' || selectedOrder.status === 'CONFIRM_INFORMATION' || selectedOrder.status === 'PENDING_CONFIRMATION' || selectedOrder.status === 'CONFIRMED') && (
           <button
             className="btn btn-danger"

@@ -706,6 +706,16 @@
   transform: translateY(-1px);
 }
 
+.continue-btn {
+  background: #28a745;
+  color: white;
+}
+
+.continue-btn:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;

@@ -22,12 +22,12 @@ export const createProduct = (data, token) =>
 
 export const updateProduct = (id, data, token) =>
   productAxios.put(`/api/v1/products/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
+    //headers: { Authorization: `Bearer ${token}` }
   });
 
 export const deleteProduct = (id, token) =>
   productAxios.delete(`/api/v1/products/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
+    //headers: { Authorization: `Bearer ${token}` }
   });
 
 // Lấy tất cả sản phẩm
