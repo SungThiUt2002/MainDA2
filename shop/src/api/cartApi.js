@@ -4,7 +4,7 @@ import { createAxiosInstance, createPublicAxiosInstance } from "./axiosInstance"
 
 // ✅ Instance với authentication (cho user đã đăng nhập)
 const axiosCart = createAxiosInstance({
-  baseURL: "http://localhost:9008/api/carts",
+  baseURL: "http://167.172.88.205/api/carts",
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,7 +12,7 @@ const axiosCart = createAxiosInstance({
 
 // ✅ Instance không yêu cầu authentication (cho guest users)
 const axiosCartPublic = createPublicAxiosInstance({
-  baseURL: "http://localhost:9008/api/carts",
+  baseURL: "http://167.172.88.205/api/carts",
   headers: {
     "Content-Type": "application/json",
   },

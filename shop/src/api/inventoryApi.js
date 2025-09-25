@@ -1,7 +1,7 @@
 import { createAxiosInstance } from './axiosInstance';
 
 const inventoryApi = createAxiosInstance({
-  baseURL: 'http://localhost:9007/api/v1/inventory-items',
+  baseURL: 'http://167.172.88.205/api/v1/inventory-items',
 });
 
 

@@ -1,7 +1,7 @@
 import { createAxiosInstance } from './axiosInstance';
 
 const axiosInstance = createAxiosInstance({
-  baseURL: 'http://localhost:9003'
+  baseURL: 'http://167.172.88.205'
 });
 
 // Lấy thông tin người dùng hiện tại
@@ -10,7 +10,7 @@ export const getMyInfo = async () => {
     const response = await axiosInstance.get('/users/myInfo');
     return response.data;
   } catch (error) {
-    console.error('❌ Lỗi lấy thông tin người dùng:', error);
+    console.error('Lỗi lấy thông tin người dùng:', error);
     throw error;
   }
 };
@@ -21,7 +21,7 @@ export const changePassword = async (changePasswordData) => {
     const response = await axiosInstance.post('/users/change-password', changePasswordData);
     return response.data;
   } catch (error) {
-    console.error('❌ Lỗi đổi mật khẩu:', error);
+    console.error('Lỗi đổi mật khẩu:', error);
     throw error;
   }
 };
@@ -32,7 +32,7 @@ export const updateProfile = async (profileData) => {
     const response = await axiosInstance.put('/users/update', profileData);
     return response.data;
   } catch (error) {
-    console.error('❌ Lỗi cập nhật thông tin:', error);
+    console.error('Lỗi cập nhật thông tin:', error);
     throw error;
   }
 };
@@ -43,7 +43,7 @@ export const logout = async () => {
     const response = await axiosInstance.post('/users/logout');
     return response.data;
   } catch (error) {
-    console.error('❌ Lỗi đăng xuất:', error);
+    console.error('Lỗi đăng xuất:', error);
     throw error;
   }
 };
