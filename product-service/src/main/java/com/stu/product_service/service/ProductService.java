@@ -26,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.io.Console;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,21 +46,20 @@ public class ProductService {
     private final ProductSearchSpecification productSearchSpecification;
 
     // 1. tạo sản phẩm (admin)
-    public Product createProduct(CreateProductRequest request, String token) {
-
-        // 0. Xác thực token
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7).trim();
-        }
-        if (jwtUtil.isTokenExpired(token)) {
-            throw new ProductServiceException(ErrorCode.UNAUTHENTICATED, "Token hết hạn");
-        }
-
-        // Kiểm tra token blacklist
-        String jti = jwtUtil.extractJti(token);
-        if (tokenBlacklistCache.contains(jti)) {
-            throw new ProductServiceException(ErrorCode.UNAUTHENTICATED, "Token đã bị thu hồi");
-        }
+    public Product createProduct(CreateProductRequest request,String token) {
+//         //0. Xác thực token
+//        if (token != null && token.startsWith("Bearer ")) {
+//            token = token.substring(7).trim();
+//        }
+//        if (jwtUtil.isTokenExpired(token)) {
+//            throw new ProductServiceException(ErrorCode.UNAUTHENTICATED, "Token hết hạn");
+//        }
+//
+//        // Kiểm tra token blacklist
+//        String jti = jwtUtil.extractJti(token);
+//        if (tokenBlacklistCache.contains(jti)) {
+//            throw new ProductServiceException(ErrorCode.UNAUTHENTICATED, "Token đã bị thu hồi");
+//        }
 
         //1. kiểm tra xem tên sản phẩm đã tồn tại chưa --> đảm bảo tên không trùng nhau
         if (productRepository.existsByName(request.getName()))
