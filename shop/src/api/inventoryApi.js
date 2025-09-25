@@ -4,7 +4,7 @@ const inventoryApi = createAxiosInstance({
   baseURL: 'http://localhost:9007/api/v1/inventory-items',
 });
 
-// Mock data tạm thời khi backend không khả dụng
+
 const mockInventoryData = [
   // Sản phẩm còn hàng (130 sản phẩm)
   ...Array.from({ length: 130 }, (_, i) => ({
