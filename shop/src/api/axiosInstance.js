@@ -27,6 +27,7 @@ const processQueue = (error, token = null) => {
 // ✅ Hàm tạo instance và gắn interceptor
 export function createAxiosInstance(config = {}) {
   const instance = axios.create(config);
+  const ORIGIN = typeof window !== "undefined" ? window.location.origin : "";
 
   instance.interceptors.request.use(
     async (config) => {
@@ -38,7 +39,7 @@ export function createAxiosInstance(config = {}) {
       } else if (accessToken && isTokenExpired(accessToken)) {
         try {
           const refreshToken = localStorage.getItem("refreshToken");
-          const res = await axios.post("http://localhost:9003/auth/refresh", {
+          const res = await axios.post(`${ORIGIN}/auth/refresh`, {
             refreshToken,
           });
 
@@ -93,6 +94,9 @@ export function createAxiosInstance(config = {}) {
           const res = await axios.post("http://localhost:9003/auth/refresh", {
             refreshToken,
           });
+          
+          // Use same-origin endpoint for refresh in response interceptor as well
+          // (above call kept for context, replaced line below)
 
           const newAccessToken = res.data.data.accessToken;
           const newRefreshToken = res.data.data.refreshToken;

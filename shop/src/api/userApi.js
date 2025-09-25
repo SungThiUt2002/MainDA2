@@ -1,7 +1,7 @@
 import { createAxiosInstance } from './axiosInstance';
 
 const axiosInstance = createAxiosInstance({
-  baseURL: 'http://167.172.88.205'
+  baseURL: (typeof window !== 'undefined' ? window.location.origin : '')
 });
 
 // Lấy thông tin người dùng hiện tại

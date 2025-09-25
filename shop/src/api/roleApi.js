@@ -1,7 +1,7 @@
 import { createAxiosInstance } from "./axiosInstance";
 
 const roleAxios = createAxiosInstance({
-  baseURL: "http://167.172.88.205", // Đổi port nếu cần
+  baseURL: (typeof window !== "undefined" ? window.location.origin : ""),
   headers: { "Content-Type": "application/json" },
 });
 
