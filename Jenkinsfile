@@ -462,44 +462,13 @@ pipeline {
                         sh "echo \"\${HARBOR_PASSWORD}\" | docker login http://${HARBOR_REGISTRY} -u \"\${HARBOR_USERNAME}\" --password-stdin"
                     }
 
-                    // ==== Build Frontend bằng Node container ====
+                    // ==== Build Frontend với Dockerfile + nginx.conf sẵn có ====
                     if (env.FRONTEND_CHANGED == 'true') {
                         echo "=== Building and pushing Frontend ==="
                         dir('shop') {
                             sh """
                                 echo "=== Debug shop directory ==="
                                 ls -lah
-
-                                docker run --rm -v \$(pwd):/app -w /app node:20-alpine sh -c '
-                                    npm ci && npm run build
-                                '
-
-                                # Tạo Dockerfile kèm default.conf
-                                cat > Dockerfile <<EOF
-FROM nginx:alpine
-COPY build/ /usr/share/nginx/html/
-COPY default.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-EOF
-
-                                # Viết default.conf cho Nginx
-                                cat > default.conf <<EOCONF
-server {
-    listen 80;
-
-    location / {
-        root   /usr/share/nginx/html;
-        index  index.html;
-        try_files \$uri /index.html;
-    }
-
-    # Proxy API call tới Istio Ingress Gateway
-    location /api/ {
-        proxy_pass http://${ISTIO_INGRESS_IP};
-    }
-}
-EOCONF
 
                                 docker build -t frontend:${BUILD_VERSION} .
                                 docker tag frontend:${BUILD_VERSION} ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/frontend:${BUILD_VERSION}
