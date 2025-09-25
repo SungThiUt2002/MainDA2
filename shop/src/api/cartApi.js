@@ -1,57 +1,10 @@
-// // // File: src/api/cartApi.js
-// // import axios from "axios";
-// import axios from "./axiosInstance";
 
-// export const addToCart = async (data) => {
-//   const token = localStorage.getItem("accessToken");
-//   if (!token) {
-//     throw new Error("❌ Người dùng chưa đăng nhập hoặc token đã hết hạn.");
-//   }
-
-//   try {
-//     const response = await axios.post(
-//       "http://localhost:9008/api/carts/item",
-//       data,
-//       {
-//         headers: {
-//         //   Authorization: `Bearer ${token}`,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-//     return response.data;
-//   } catch (err) {
-//     console.error("❌ Lỗi API addToCart:", err?.response?.data || err.message);
-//     throw err;
-//   }
-// };
-
-// File: src/api/cartApi.js
-// import axios from "./axiosInstance";
-
-// export const addToCart = async (data) => {
-//   try {
-//     const response = await axios.post(
-//       "http://localhost:9008/api/carts/item",
-//       data,
-//       {
-//         headers: {
-//           "Content-Type": "application/json", // Chỉ cần cái này thôi
-//         },
-//       }
-//     );
-//     return response.data;
-//   } catch (err) {
-//     console.error("❌ Lỗi API addToCart:", err?.response?.data || err.message);
-//     throw err;
-//   }
-// };
 // api/cartApi.js
 import { createAxiosInstance, createPublicAxiosInstance } from "./axiosInstance";
 
 // ✅ Instance với authentication (cho user đã đăng nhập)
 const axiosCart = createAxiosInstance({
-  baseURL: "http://localhost:9008/api/carts",
+  baseURL: "http://167.172.88.205/api/carts",
   headers: {
     "Content-Type": "application/json",
   },
@@ -59,7 +12,7 @@ const axiosCart = createAxiosInstance({
 
 // ✅ Instance không yêu cầu authentication (cho guest users)
 const axiosCartPublic = createPublicAxiosInstance({
-  baseURL: "http://localhost:9008/api/carts",
+  baseURL: "http://167.172.88.205/api/carts",
   headers: {
     "Content-Type": "application/json",
   },

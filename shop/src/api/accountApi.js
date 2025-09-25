@@ -1,10 +1,12 @@
 import axios from "axios";
-const ACCOUNT_API_BASE_URL = "http://localhost:9003"; // Đổi port nếu khác
+const ACCOUNT_API_BASE_URL = "https://167.172.88.205"; // Đổi port nếu khác
 
 const accountAxios = axios.create({
   baseURL: ACCOUNT_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
 });
+
+
 
 export const getAllUsers = (token) =>
   accountAxios.get("/users/admin/allUser", {

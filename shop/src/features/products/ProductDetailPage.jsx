@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getProductById } from "../../api/productApi";
-import { getAvailableQuantity, getSoldQuantity } from "../../api/inventoryApi";
 import { addToCart } from "../../api/cartApi";
+import { getInventoryByProductId } from "../../api/inventoryApi";
 import "./ProductDetailPage.css";
 
 const ProductDetailPage = () => {
@@ -13,65 +13,37 @@ const ProductDetailPage = () => {
   const [mainImage, setMainImage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [stockData, setStockData] = useState({
-    availableQuantity: 0,
-    soldQuantity: 0
-  });
+  const [inventoryInfo, setInventoryInfo] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        console.log("Fetching product with ID:", id); // Debug log
         const res = await getProductById(id);
-        console.log("Product data:", res.data); // Debug log
-
         setProduct(res.data);
         setMainImage(res.data.images?.[0] ? (typeof res.data.images[0] === 'object' ? res.data.images[0].url : res.data.images[0]) : "");
 
-        // Lấy thông tin thương hiệu nếu có brandId
-        if (res.data.brand?.id) {
-          try {
-            const brandRes = await fetch(`http://localhost:9001/api/v1/brands/${res.data.brand.id}`);
-            if (brandRes.ok) {
-              const brandData = await brandRes.json();
-              setBrandName(brandData.name || "Không xác định");
-            }
-          } catch (brandErr) {
-            console.error("Lỗi khi tải thông tin brand:", brandErr);
-            setBrandName(res.data.brand?.name || "Không xác định");
-          }
-        } else if (res.data.brand?.name) {
+        // Lấy thông tin brand từ response của product
+        if (res.data.brand && res.data.brand.name) {
           setBrandName(res.data.brand.name);
         } else {
           setBrandName("Không có thương hiệu");
         }
 
-
+        // Lấy thông tin tồn kho
         try {
-          const [availableRes, soldRes] = await Promise.all([
-            getAvailableQuantity(res.data.id),
-            getSoldQuantity(res.data.id)
-          ]);
-          setStockData({
-            availableQuantity: availableRes.data || 0,
-            soldQuantity: soldRes.data || 0
-          });
-
-        } catch (invErr) {
-          console.error("Lỗi khi lấy thông tin tồn kho:", invErr);
+          const inventoryRes = await getInventoryByProductId(id);
+          setInventoryInfo(inventoryRes.data);
+        } catch (inventoryErr) {
+          console.error("Lỗi khi tải thông tin tồn kho:", inventoryErr);
+          // Không set error vì đây không phải lỗi nghiêm trọng
         }
-
       } catch (err) {
-        console.error("Error fetching product:", err); // Debug log
         setError("Không thể tải chi tiết sản phẩm.");
       } finally {
         setLoading(false);
       }
     };
-
-    if (id) {
-      fetchProduct();
-    }
+    fetchProduct();
   }, [id]);
 
   const handleAddToCart = async () => {
@@ -116,7 +88,7 @@ const ProductDetailPage = () => {
         </div>
       </header>
 
-      <nav className="breadcrumb">Sản phẩm / {product.name}</nav>
+      <nav className="breadcrumb">Trang chủ / Sản phẩm / {product.name}</nav>
 
       <div className="product-body">
         <div className="image-gallery">
@@ -129,9 +101,9 @@ const ProductDetailPage = () => {
           </div>
           <div className="thumbnail-row">
             <div className="thumbnail-list-horizontal">
-              {product.images && product.images.length > 0 ? product.images.map((img, index) => (
+              {product.images && product.images.length > 0 ? product.images.map((img) => (
                 <img
-                  key={img.id || img || index}
+                  key={img.id || img}
                   src={`http://localhost:9001/images/${typeof img === 'object' ? img.url : img}`}
                   alt="thumbnail"
                   className={`thumbnail ${mainImage === (typeof img === 'object' ? img.url : img) ? "active" : ""}`}
@@ -144,13 +116,28 @@ const ProductDetailPage = () => {
 
         <div className="info-section">
           <h1 className="product-title">{product.name}</h1>
-          <p className="product-price">{product.price?.toLocaleString() || "0"} ₫</p>
-          <p><strong>Đã bán:</strong> {stockData.soldQuantity}</p>
-          <p><strong>Tồn kho:</strong> {stockData.availableQuantity}</p>
+          <p className="product-price">{product.price.toLocaleString()} ₫</p>
+          
+                     {/* Thông tin tồn kho từ inventory API */}
+           {inventoryInfo && (
+             <>
+               <p><strong>Đã bán:</strong> {inventoryInfo.soldQuantity || product.soldQuantity || 0}</p>
+               <p><strong>Tồn kho:</strong> {inventoryInfo.availableQuantity || product.stock || 0}</p>
+             </>
+           )}
+          
+          {/* Fallback nếu không có inventory info */}
+          {!inventoryInfo && (
+            <>
+              <p><strong>Đã bán:</strong> {product.soldQuantity || 0}</p>
+              <p><strong>Tồn kho:</strong> {product.stock || 0}</p>
+            </>
+          )}
+          
           <p><strong>Thương hiệu:</strong> {brandName}</p>
           <div className="product-description">
             <strong>Mô tả:</strong>
-            <p className="product-desc-text">{product.description || "Chưa có mô tả"}</p>
+            <p className="product-desc-text">{product.description}</p>
           </div>
           <button className="add-to-cart" onClick={handleAddToCart}>
             Thêm vào giỏ hàng

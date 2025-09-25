@@ -2,13 +2,12 @@
 import { setRefreshing } from "../store/loadingStore"; // ở đầu file
 import axios from "axios";
 
-// ✅ [NEW] Global refresh state for UI loader
 let isRefreshing = false;
 export const isSessionRefreshing = () => isRefreshing;
 
-// ✅ [1] Tạo instance axios
+
 const authAxios = axios.create({
-  baseURL: /*process.env.REACT_APP_AUTH_API ||*/ "http://localhost:9003",
+  baseURL: /*process.env.REACT_APP_AUTH_API ||*/ "https://167.172.88.205",
   headers: {
     "Content-Type": "application/json",
   },

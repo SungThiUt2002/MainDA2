@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/users/delete/{userId}").permitAll()
                         .requestMatchers("/api/address/{id}/users/{userId}").permitAll()
                         .requestMatchers("/api/address/all/{userId}").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
@@ -72,9 +73,6 @@ KHi SecurityFilterChain được kích hoạt nó sẽ khởi tạo chuỗi
 
     exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint) – gán entry point xử lý lỗi xác thự
 
- */
-
-// VÍ DỤ CỤ THỂ
 
 /// //////
 /*

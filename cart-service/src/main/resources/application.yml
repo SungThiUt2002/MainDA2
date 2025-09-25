@@ -1,22 +1,23 @@
-#server:
-#  port: 9008
-
 spring:
   application:
     name: cart-service
-
   config:
-    import: optional:configserver:http://localhost:9021  # Địa chỉ Config Server
-    fail-fast: true
+    import: optional:configserver:${SPRING_CLOUD_CONFIG_URI:http://localhost:9021}  # import config từ Config Server
+  cloud:
+    config:
+      fail-fast: true
+      retry:
+        initial-interval: 1000   # 1 giây
+        max-interval: 2000       # 2 giây
+        max-attempts: 6          # tối đa 6 lần
 
-#app:
-#  product-service:
-#    url: http://localhost:9001
-#  inventory-service:
-#    url: http://localhost:9007
-#  account-service:
-#    url: http://localhost:9003
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka/
+#    enabled: true
 
+# Các cấu hình khác đã comment - tốt!
 #  datasource:
 #    url: jdbc:mysql://localhost:3306/cart_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
 #    username: root
@@ -55,6 +56,12 @@ spring:
 #            trusted:
 #              packages: "*"
 #
+## Eureka configuration
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
+#    enabled: true
 #
 #
 ## Dịch vụ gọi lẫn nhau (api)
@@ -89,5 +96,3 @@ spring:
 #    com.stu.cart_service.service: DEBUG
 #    org.springframework.security: DEBUG
 #
-#jwt:
-#  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970

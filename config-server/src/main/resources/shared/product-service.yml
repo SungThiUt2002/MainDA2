@@ -1,12 +1,13 @@
+
 server:
-  port: 9008
+  port: 9001
 
 spring:
 #  application:
-#    name: cart-service
+#    name: product-service
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/cart_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/product_da2?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -20,19 +21,17 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
 
-  redis:
-    host: ${SPRING_DATA_REDIS_HOST:localhost}
-    port: ${SPRING_DATA_REDIS_PORT:6379}
-
   kafka:
+#    bootstrap-servers: localhost:19092,localhost:19093,localhost:19094
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BROKERS:localhost:9092}}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.add.type.headers: true
+
     consumer:
-      group-id: cart-service-group
+      group-id: product-service-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
@@ -41,6 +40,37 @@ spring:
           json:
             trusted:
               packages: "*"
+  #            type:
+  #              mapping:
+  #                com.stu.common_dto.event.AccountEvent.TokenBlacklistEvent: com.stu.common_dto.event.AccountEvent.TokenBlacklistEvent
+
+  redis:
+    host: ${SPRING_DATA_REDIS_HOST:localhost}
+    port: ${SPRING_DATA_REDIS_PORT:6379}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+#
+#
+#jwt:
+#  secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+logging:
+  level:
+    com.stu.product_service.security: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.kafka: DEBUG
+    com.stu.product_service.event: DEBUG
+
+
+
+app:
+  inventory-service:
+    url: ${APP_INVENTORY_SERVICE_URL:http://localhost:9007}
+
 
 eureka:
   client:
@@ -48,33 +78,11 @@ eureka:
       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka}
     enabled: true
 
-app:
-  product-service:
-    url: ${APP_PRODUCT_SERVICE_URL:http://localhost:9001}
-  inventory-service:
-    url: ${APP_INVENTORY_SERVICE_URL:http://localhost:9007}
-  account-service:
-    url: ${APP_ACCOUNT_SERVICE_URL:http://localhost:9003}
-
-feign:
-  client:
-    config:
-      default:
-        connectTimeout: 5000
-        readTimeout: 5000
-        loggerLevel: BASIC
-
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info
   endpoint:
     health:
       show-details: always
-
-logging:
-  level:
-    com.stu.cart_service: INFO
-    com.stu.cart_service.service: DEBUG
-    org.springframework.security: WARN
