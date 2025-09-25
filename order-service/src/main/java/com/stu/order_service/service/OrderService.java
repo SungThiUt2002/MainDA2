@@ -453,6 +453,10 @@ public class OrderService {
                 .build();
 
         switch (order.getStatus()) {
+            case CREATED, CONFIRM_INFORMATION -> {
+                // Đơn hàng mới tạo hoặc đang điền thông tin - không cần xử lý inventory
+                // Chỉ cần hủy đơn hàng
+            }
             case PENDING_PAYMENT, PENDING_CONFIRMATION -> {
                 inventoryProducer.sendPaymentFailForStock(inventoryEvent);
             }

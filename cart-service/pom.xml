@@ -31,20 +31,17 @@
         <spring-cloud.version>2025.0.0</spring-cloud.version>
     </properties>
     <dependencies>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
-<<<<<<< HEAD
 
-        <!-- Thêm thư viện dùng chung -->
-=======
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
-<!--        &lt;!&ndash; Thêm thư viện dùng chung &ndash;&gt;-->
->>>>>>> fccf1a5228ae3c64572a1df54a9baf6e6f43a4d3
+
         <dependency>
             <groupId>com.stu</groupId>
             <artifactId>common-dto</artifactId>
@@ -97,7 +94,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
-        
+
         <!-- OpenFeign for service-to-service communication -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -118,11 +115,11 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>org.postgresql</groupId>-->
-<!--            <artifactId>postgresql</artifactId>-->
-<!--            <scope>runtime</scope>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.postgresql</groupId>-->
+        <!--            <artifactId>postgresql</artifactId>-->
+        <!--            <scope>runtime</scope>-->
+        <!--        </dependency>-->
 
         <dependency>
             <groupId>com.mysql</groupId>
