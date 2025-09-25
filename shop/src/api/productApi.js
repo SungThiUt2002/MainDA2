@@ -2,7 +2,7 @@
 import axios from "axios";
 
 // Cấu hình baseURL động (ưu tiên từ .env)
-const PRODUCT_API_BASE_URL =  "http://167.172.88.205";
+const PRODUCT_API_BASE_URL =  "https://167.172.88.205";
 
 // Tạo instance riêng cho Product Service
 const productAxios = axios.create({

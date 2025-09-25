@@ -7,7 +7,7 @@ export const isSessionRefreshing = () => isRefreshing;
 
 
 const authAxios = axios.create({
-  baseURL: /*process.env.REACT_APP_AUTH_API ||*/ "http://167.172.88.205",
+  baseURL: /*process.env.REACT_APP_AUTH_API ||*/ "https://167.172.88.205",
   headers: {
     "Content-Type": "application/json",
   },
