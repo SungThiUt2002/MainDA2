@@ -22,38 +22,11 @@ public class Brand {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-//    private String logoUrl;
-//
-//    private String websiteUrl;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-//    @Column(name = "created_at")
-//    private LocalDateTime createdAt;
-//
-//    @Column(name = "updated_at")
-//    private LocalDateTime updatedAt;
-//
-//    @Column(name = "deleted_at")
-//    private LocalDateTime deletedAt;
-//
-//    // xử lý sau
-//    private Long createdBy;
-//    private Long updatedBy;
-//    private Long deletedBy;
 
     @OneToMany(mappedBy = "brand")
     private List<Product> products;
-
-//    @PrePersist
-//    protected void onCreate() {
-//        createdAt = LocalDateTime.now();
-//        updatedAt = LocalDateTime.now();
-//    }
-//
-//    @PreUpdate
-//    protected void onUpdate() {
-//        updatedAt = LocalDateTime.now();
-//    }
 } 
