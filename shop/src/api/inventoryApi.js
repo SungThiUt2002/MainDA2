@@ -131,6 +131,8 @@ export const importStock = async (productId, stockData, token) => {
   try {
     console.log('Importing stock with data:', { productId, stockData, token: token ? 'Bearer ***' : 'No token' });
     
+    // Gọi API inventory service để nhập kho
+    console.log('🔄 Gọi API inventory service để nhập kho...');
     const response = await inventoryApi.post(`/${productId}`, stockData, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -138,7 +140,7 @@ export const importStock = async (productId, stockData, token) => {
       },
     });
     
-    console.log('Import stock response:', response);
+    console.log('✅ Đã nhập kho thành công:', response);
     return response;
   } catch (error) {
     console.error('Lỗi khi nhập kho:', error);

@@ -182,7 +182,9 @@ const InventoryDashboard = () => {
 
   const handleProductSelect = (e) => {
     const selectedProductId = e.target.value;
+    console.log('🔍 Selected productId:', selectedProductId, 'Type:', typeof selectedProductId);
     const selectedProduct = allInventoryItems.find(item => item.productId.toString() === selectedProductId);
+    console.log('🔍 Selected product:', selectedProduct);
     
     setImportForm(prev => ({
       ...prev,
