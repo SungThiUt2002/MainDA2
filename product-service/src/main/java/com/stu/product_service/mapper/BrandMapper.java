@@ -15,7 +15,7 @@ public interface BrandMapper {
     BrandResponse toResponse(Brand brand);
 
     @Mapping(target = "products", ignore = true)
-    @Mapping(target = "isActive", expression = "java(request.getStatus() != null && request.getStatus().equals(\"ACTIVE\"))")
+    @Mapping(target = "isActive", constant = "true")
     @Mapping(target = "id", ignore = true)
     Brand toEntity(CreateBrandRequest request);
 
