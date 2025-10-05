@@ -55,30 +55,44 @@ export const getAllInventoryItems = async () => {
     try {
       console.log('🔄 Fallback: Lấy danh sách sản phẩm từ product service...');
       const productsResponse = await getAllProducts();
+      console.log('📦 Product service response:', productsResponse);
+      
       const products = productsResponse.data || productsResponse;
+      console.log('📦 Products data:', products);
+      console.log('📦 Products count:', products.length);
       
       // Chuyển đổi dữ liệu sản phẩm thành format inventory
-      const inventoryItems = products.map((product, index) => ({
-        id: product.id || index + 1,
-        productId: product.id,
-        productName: product.name || product.productName,
-        totalQuantity: product.stock || 0,
-        availableQuantity: product.stock || 0,
-        soldQuantity: 0,
-        lockedQuantity: 0,
-        lowStockThreshold: 10,
-        reorderPoint: 5,
-        isAvailable: true,
-        isActive: true,
-        isLowStock: (product.stock || 0) <= 10,
-        isOutOfStock: (product.stock || 0) === 0,
-        needsReorder: (product.stock || 0) <= 5,
-        lastSaleDate: new Date().toISOString(),
-        createdAt: product.createdAt || new Date().toISOString(),
-        updatedAt: product.updatedAt || new Date().toISOString()
-      }));
+      const inventoryItems = products.map((product, index) => {
+        console.log(`📦 Mapping product ${index + 1}:`, {
+          id: product.id,
+          name: product.name,
+          stock: product.stock,
+          available: product.available
+        });
+        
+        return {
+          id: product.id || index + 1,
+          productId: product.id,
+          productName: product.name || product.productName,
+          totalQuantity: product.stock || 0,
+          availableQuantity: product.stock || 0,
+          soldQuantity: 0,
+          lockedQuantity: 0,
+          lowStockThreshold: 10,
+          reorderPoint: 5,
+          isAvailable: true,
+          isActive: true,
+          isLowStock: (product.stock || 0) <= 10,
+          isOutOfStock: (product.stock || 0) === 0,
+          needsReorder: (product.stock || 0) <= 5,
+          lastSaleDate: new Date().toISOString(),
+          createdAt: product.createdAt || new Date().toISOString(),
+          updatedAt: product.updatedAt || new Date().toISOString()
+        };
+      });
       
       console.log('✅ Đã lấy được', inventoryItems.length, 'sản phẩm thật từ product service');
+      console.log('📦 Mapped inventory items:', inventoryItems.slice(0, 3)); // Show first 3 items
       return { data: inventoryItems };
       
     } catch (productError) {

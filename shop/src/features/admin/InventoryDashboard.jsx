@@ -280,7 +280,11 @@ const InventoryDashboard = () => {
                   className="product-select"
                 >
                   <option value="">-- Chọn sản phẩm --</option>
-                  {allInventoryItems.length > 0 ? (
+                  {loading ? (
+                    <option value="" disabled>
+                      🔄 Đang tải danh sách sản phẩm...
+                    </option>
+                  ) : allInventoryItems.length > 0 ? (
                     allInventoryItems.map((item) => (
                       <option key={item.productId} value={item.productId}>
                         {item.productName} (ID: {item.productId}) - Còn: {item.availableQuantity}
@@ -288,7 +292,7 @@ const InventoryDashboard = () => {
                     ))
                   ) : (
                     <option value="" disabled>
-                      🔄 Đang tải danh sách sản phẩm...
+                      ❌ Không có sản phẩm nào
                     </option>
                   )}
                 </select>
