@@ -19,20 +19,12 @@ public class CategoryService {
 
     // Tạo mới danh mục sản phẩm
     public Category createCategory(CreateCategoryRequest request) {
-        try {
-            // Kiểm tra sơ bộ để tránh unnecessary database calls
-            if (categoryRepository.existsByName(request.getName()))
-                throw new ProductServiceException(ErrorCode.CATEGORY_ALREADY_EXISTS);
-            
-            Category category = categoryMapper.toEntity(request);
-            return categoryRepository.save(category);
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            // Handle duplicate key constraint violation at database level
-            if (e.getMessage().contains("Duplicate entry") && e.getMessage().contains("UKt8o6pivur7nn124jehx7cygw5")) {
-                throw new ProductServiceException(ErrorCode.CATEGORY_ALREADY_EXISTS);
-            }
-            throw e; // Re-throw other database integrity violations
-        }
+
+        // kiểm tra xem tên danh mục đã tồn tại chưa(đảm bảo tên danh mục không trùng nhau)
+        if (categoryRepository.existsByName(request.getName()))
+            throw new ProductServiceException(ErrorCode.CATEGORY_ALREADY_EXISTS);
+        Category category = categoryMapper.toEntity(request);
+        return categoryRepository.save(category);
     }
 
     // update danh mục theo id

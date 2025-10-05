@@ -29,4 +29,6 @@ public class Brand {
 
     @OneToMany(mappedBy = "brand")
     private List<Product> products;
+
+
 } 
