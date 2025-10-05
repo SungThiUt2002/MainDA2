@@ -31,4 +31,6 @@ export const createUser = (user, token) =>
 export const deleteUser = (id, token) =>
   accountAxios.delete(`/users/delete/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
-  }); 
+  });
+  
+  
