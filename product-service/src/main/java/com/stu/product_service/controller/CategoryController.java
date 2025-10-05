@@ -2,7 +2,6 @@ package com.stu.product_service.controller;
 
 import com.stu.product_service.dto.request.CreateCategoryRequest;
 import com.stu.product_service.dto.request.UpdateCategoryRequest;
-import com.stu.product_service.dto.response.ApiResponse;
 import com.stu.product_service.dto.response.CategoryResponse;
 
 import com.stu.product_service.service.CategoryService;
@@ -10,8 +9,8 @@ import com.stu.product_service.mapper.CategoryMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -22,7 +21,7 @@ public class CategoryController {
     private final CategoryMapper categoryMapper;
 
     @PostMapping
-    public ResponseEntity<CategoryResponse> createCategory(@RequestBody CreateCategoryRequest request) {
+    public ResponseEntity<CategoryResponse> createCategory(@RequestBody @Valid CreateCategoryRequest request) {
         var category = categoryService.createCategory(request);
         var response = categoryMapper.toResponse(category);
         return ResponseEntity.ok(response);
@@ -30,7 +29,7 @@ public class CategoryController {
 
     // update danh mục
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryResponse> updateCategory(@PathVariable  Long id, @RequestBody UpdateCategoryRequest request) {
+    public ResponseEntity<CategoryResponse> updateCategory(@PathVariable  Long id, @RequestBody @Valid UpdateCategoryRequest request) {
         var category = categoryService.updateCategory(id, request);
         var response = categoryMapper.toResponse(category);
         return ResponseEntity.ok(response);
