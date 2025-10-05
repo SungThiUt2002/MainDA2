@@ -23,7 +23,14 @@ const CategoryManager = () => {
     try {
       const response = await getAllCategories();
       const categoriesArray = Array.isArray(response) ? response : [];
-      setCategories(categoriesArray);
+      
+      // Gán default status cho các category từ backend (vì backend không có field status)
+      const categoriesWithStatus = categoriesArray.map(category => ({
+        ...category,
+        status: category.status || "ACTIVE" // Default status
+      }));
+      
+      setCategories(categoriesWithStatus);
       setError("");
     } catch (err) {
       setError("Không thể tải danh sách danh mục");
@@ -38,7 +45,7 @@ const CategoryManager = () => {
       setFormData({
         name: category.name || "",
         description: category.description || "",
-        status: category.status || "ACTIVE"
+        status: "ACTIVE" // Default status vì backend không có field này
       });
     } else {
       setEditingCategory(null);
@@ -54,12 +61,11 @@ const CategoryManager = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingCategory(null);
-    setFormData({
-      name: "",
-      description: "",
-      image: "",
-      status: "ACTIVE"
-    });
+      setFormData({
+        name: "",
+        description: "",
+        status: "ACTIVE"
+      });
   };
 
   const handleInputChange = (e) => {
@@ -77,10 +83,17 @@ const CategoryManager = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
+      
+      // Chỉ gửi name và description lên backend, bỏ status
+      const backendData = {
+        name: formData.name,
+        description: formData.description
+      };
+      
       if (editingCategory) {
-        await updateCategory(editingCategory.id, formData, token);
+        await updateCategory(editingCategory.id, backendData, token);
       } else {
-        await createCategory(formData, token);
+        await createCategory(backendData, token);
       }
       handleCloseModal();
       fetchCategories();
@@ -114,6 +127,7 @@ const CategoryManager = () => {
     const config = statusConfig[status] || statusConfig.ACTIVE;
     return <span className={`status-badge ${config.class}`}>{config.text}</span>;
   };
+
 
 
 
@@ -173,7 +187,7 @@ const CategoryManager = () => {
               <div className="category-content">
                 <div className="category-header-info">
                   <h3 className="category-name">{category.name}</h3>
-                  {getStatusBadge(category.status)}
+                  {getStatusBadge(category.status || "ACTIVE")}
                 </div>
                 
                 <p className="category-description">
@@ -248,8 +262,6 @@ const CategoryManager = () => {
                   rows="3"
                 />
               </div>
-
-              
 
               <div className="form-group">
                 <label>Trạng thái</label>

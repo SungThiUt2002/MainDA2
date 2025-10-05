@@ -8,4 +8,9 @@ public class BrandResponse {
     private String name;
     private String description;
     private Boolean isActive;
+    
+    // Getter for status field that frontend expects
+    public String getStatus() {
+        return isActive != null && isActive ? "ACTIVE" : "INACTIVE";
+    }
 } 

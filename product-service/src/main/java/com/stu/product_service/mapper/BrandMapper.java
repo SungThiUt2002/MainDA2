@@ -8,7 +8,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel = "spring",nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface BrandMapper {
@@ -16,7 +15,7 @@ public interface BrandMapper {
     BrandResponse toResponse(Brand brand);
 
     @Mapping(target = "products", ignore = true)
-    @Mapping(target = "isActive", ignore = true)
+    @Mapping(target = "isActive", expression = "java(request.getStatus() != null && request.getStatus().equals(\"ACTIVE\"))")
     @Mapping(target = "id", ignore = true)
     Brand toEntity(CreateBrandRequest request);
 

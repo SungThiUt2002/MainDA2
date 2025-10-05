@@ -61,6 +61,7 @@ export const getAllCategories = async () => {
 
 export const createCategory = async (data, token) => {
   try {
+    console.log('Creating category with data:', data);
     const response = await productAxios.post('/api/v1/categories', data, {
       headers: { Authorization: `Bearer ${token}` }
     });

@@ -9,12 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import com.stu.product_service.dto.request.CreateBrandRequest;
 import com.stu.product_service.dto.request.UpdateBrandRequest;
-import com.stu.product_service.dto.response.BrandResponse;
 import com.stu.product_service.mapper.BrandMapper;
 
 @Service
@@ -35,7 +33,6 @@ public class BrandService {
             throw new ProductServiceException(ErrorCode.BRAND_NAME_EXISTS);
         }
         Brand brand = brandMapper.toEntity(request);
-        brand.setIsActive(true);
         Brand savedBrand = brandRepository.save(brand);
         log.info("Created brand: {}", savedBrand.getName());
         return savedBrand;
