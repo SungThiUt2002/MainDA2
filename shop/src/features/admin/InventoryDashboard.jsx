@@ -29,25 +29,24 @@ const InventoryDashboard = () => {
     fetchInventoryData();
   }, []);
 
+
   const fetchInventoryData = async () => {
     try {
       setLoading(true);
+      
       const [lowStockRes, reorderRes, allItemsRes] = await Promise.all([
         getLowStockItems(),
         getItemsNeedingReorder(),
         getAllInventoryItems(),
       ]);
 
-      setLowStockItems(lowStockRes.data || []);
-      setNeedingReorderItems(reorderRes.data || []);
-      setAllInventoryItems(allItemsRes.data || []);
+      const lowStockData = lowStockRes.data || [];
+      const reorderData = reorderRes.data || [];
+      const allItemsData = allItemsRes.data || [];
 
-      // Debug logging
-      console.log('📦 Inventory data loaded:');
-      console.log('- Low stock items:', lowStockRes.data?.length || 0);
-      console.log('- Reorder items:', reorderRes.data?.length || 0);
-      console.log('- All items:', allItemsRes.data?.length || 0);
-      console.log('- All items data:', allItemsRes.data);
+      setLowStockItems(lowStockData);
+      setNeedingReorderItems(reorderData);
+      setAllInventoryItems(allItemsData);
 
       // Tính toán thống kê
       const totalItems = allItemsRes.data?.length || 0;
@@ -65,6 +64,11 @@ const InventoryDashboard = () => {
       });
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu tồn kho:", error);
+      
+      // Set empty arrays on error
+      setLowStockItems([]);
+      setNeedingReorderItems([]);
+      setAllInventoryItems([]);
     } finally {
       setLoading(false);
     }
@@ -237,12 +241,7 @@ const InventoryDashboard = () => {
       <div className="inventory-header">
         <h2>📦 Quản lý tồn kho</h2>
         <div className="header-actions">
-          <button className="import-btn" onClick={() => {
-            console.log('🔍 Opening import modal...');
-            console.log('📦 Available products:', allInventoryItems.length);
-            console.log('📦 Products data:', allInventoryItems);
-            setShowImportModal(true);
-          }}>
+          <button className="import-btn" onClick={() => setShowImportModal(true)}>
             📥 Nhập kho
           </button>
         <button className="refresh-btn" onClick={fetchInventoryData}>
@@ -256,7 +255,7 @@ const InventoryDashboard = () => {
         <div className="modal-overlay">
           <div className="import-modal">
             <div className="modal-header">
-              <h3>📥 Nhập kho</h3>
+                <h3>📥 Nhập kho</h3>
               <button 
                 className="close-btn" 
                 onClick={() => {

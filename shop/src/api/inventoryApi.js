@@ -1,74 +1,11 @@
 import { createAxiosInstance } from './axiosInstance';
+import { getAllProducts } from './productApi';
 
 const inventoryApi = createAxiosInstance({
   baseURL: (typeof window !== 'undefined' ? window.location.origin : '') + '/api/v1/inventory-items',
 });
 
 
-const mockInventoryData = [
-  // Sản phẩm còn hàng (130 sản phẩm)
-  ...Array.from({ length: 130 }, (_, i) => ({
-    id: i + 1,
-    productId: i + 1,
-    productName: `Sản phẩm ${i + 1}`,
-    totalQuantity: 50,
-    availableQuantity: 35,
-    soldQuantity: 15,
-    lockedQuantity: 0,
-    lowStockThreshold: 10,
-    reorderPoint: 5,
-    isAvailable: true,
-    isActive: true,
-    isLowStock: false,
-    isOutOfStock: false,
-    needsReorder: false,
-    lastSaleDate: "2024-01-15T10:30:00",
-    createdAt: "2024-01-01T00:00:00",
-    updatedAt: "2024-01-15T10:30:00"
-  })),
-  
-  // Sản phẩm sắp hết hàng (8 sản phẩm)
-  ...Array.from({ length: 8 }, (_, i) => ({
-    id: 131 + i,
-    productId: 131 + i,
-    productName: `Sản phẩm sắp hết ${i + 1}`,
-    totalQuantity: 30,
-    availableQuantity: 8,
-    soldQuantity: 22,
-    lockedQuantity: 0,
-    lowStockThreshold: 10,
-    reorderPoint: 5,
-    isAvailable: true,
-    isActive: true,
-    isLowStock: true,
-    isOutOfStock: false,
-    needsReorder: true,
-    lastSaleDate: "2024-01-14T15:45:00",
-    createdAt: "2024-01-01T00:00:00",
-    updatedAt: "2024-01-14T15:45:00"
-  })),
-  
-  // Sản phẩm hết hàng (12 sản phẩm)
-  ...Array.from({ length: 12 }, (_, i) => ({
-    id: 139 + i,
-    productId: 139 + i,
-    productName: `Sản phẩm hết hàng ${i + 1}`,
-    totalQuantity: 20,
-    availableQuantity: 0,
-    soldQuantity: 20,
-    lockedQuantity: 0,
-    lowStockThreshold: 10,
-    reorderPoint: 5,
-    isAvailable: false,
-    isActive: true,
-    isLowStock: false,
-    isOutOfStock: true,
-    needsReorder: true,
-    lastSaleDate: "2024-01-13T09:20:00",
-    createdAt: "2024-01-01T00:00:00",
-    updatedAt: "2024-01-13T09:20:00"
-  }))
-];
 
 // Lấy thông tin tồn kho của một sản phẩm theo productId
 export const getInventoryByProductId = async (productId) => {
@@ -77,11 +14,6 @@ export const getInventoryByProductId = async (productId) => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy thông tin tồn kho:', error);
-    // Fallback to mock data
-    const mockItem = mockInventoryData.find(item => item.productId === productId);
-    if (mockItem) {
-      return { data: mockItem };
-    }
     throw error;
   }
 };
@@ -93,11 +25,6 @@ export const getAvailableQuantity = async (productId) => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy số lượng có sẵn:', error);
-    // Fallback to mock data
-    const mockItem = mockInventoryData.find(item => item.productId === productId);
-    if (mockItem) {
-      return { data: mockItem.availableQuantity };
-    }
     throw error;
   }
 };
@@ -109,11 +36,6 @@ export const getSoldQuantity = async (productId) => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy số lượng đã bán:', error);
-    // Fallback to mock data
-    const mockItem = mockInventoryData.find(item => item.productId === productId);
-    if (mockItem) {
-      return { data: mockItem.soldQuantity };
-    }
     throw error;
   }
 };
@@ -121,15 +43,49 @@ export const getSoldQuantity = async (productId) => {
 // Lấy tất cả thông tin tồn kho
 export const getAllInventoryItems = async () => {
   try {
+    // Thử lấy từ inventory service trước
     const response = await inventoryApi.get('/all');
     console.log('Inventory API response:', response);
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách tồn kho:', error);
     console.error('Error details:', error.response?.data);
-    // Fallback to mock data khi API không khả dụng
-    console.log('Sử dụng mock data cho danh sách tồn kho');
-    return { data: mockInventoryData };
+    
+    // Fallback: Lấy danh sách sản phẩm thật từ product service
+    try {
+      console.log('🔄 Fallback: Lấy danh sách sản phẩm từ product service...');
+      const productsResponse = await getAllProducts();
+      const products = productsResponse.data || productsResponse;
+      
+      // Chuyển đổi dữ liệu sản phẩm thành format inventory
+      const inventoryItems = products.map((product, index) => ({
+        id: product.id || index + 1,
+        productId: product.id,
+        productName: product.name || product.productName,
+        totalQuantity: product.stock || 0,
+        availableQuantity: product.stock || 0,
+        soldQuantity: 0,
+        lockedQuantity: 0,
+        lowStockThreshold: 10,
+        reorderPoint: 5,
+        isAvailable: true,
+        isActive: true,
+        isLowStock: (product.stock || 0) <= 10,
+        isOutOfStock: (product.stock || 0) === 0,
+        needsReorder: (product.stock || 0) <= 5,
+        lastSaleDate: new Date().toISOString(),
+        createdAt: product.createdAt || new Date().toISOString(),
+        updatedAt: product.updatedAt || new Date().toISOString()
+      }));
+      
+      console.log('✅ Đã lấy được', inventoryItems.length, 'sản phẩm thật từ product service');
+      return { data: inventoryItems };
+      
+    } catch (productError) {
+      console.error('❌ Lỗi khi lấy sản phẩm từ product service:', productError);
+      console.log('❌ Không thể lấy dữ liệu sản phẩm');
+      return { data: [] };
+    }
   }
 };
 
@@ -140,9 +96,7 @@ export const getAvailableInventoryItems = async () => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm có sẵn:', error);
-    // Fallback to mock data
-    const availableItems = mockInventoryData.filter(item => item.isAvailable && item.availableQuantity > 0);
-    return { data: availableItems };
+    throw error;
   }
 };
 
@@ -153,9 +107,7 @@ export const getLowStockItems = async () => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm sắp hết hàng:', error);
-    // Fallback to mock data
-    const lowStockItems = mockInventoryData.filter(item => item.isLowStock);
-    return { data: lowStockItems };
+    throw error;
   }
 };
 
@@ -166,9 +118,7 @@ export const getItemsNeedingReorder = async () => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm cần đặt hàng:', error);
-    // Fallback to mock data
-    const reorderItems = mockInventoryData.filter(item => item.needsReorder);
-    return { data: reorderItems };
+    throw error;
   }
 };
 
