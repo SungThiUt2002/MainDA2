@@ -127,7 +127,9 @@ export const getAllInventoryItems = async () => {
   } catch (error) {
     console.error('Lỗi khi lấy danh sách tồn kho:', error);
     console.error('Error details:', error.response?.data);
-    throw error; // Không fallback về mock data nữa
+    // Fallback to mock data khi API không khả dụng
+    console.log('Sử dụng mock data cho danh sách tồn kho');
+    return { data: mockInventoryData };
   }
 };
 

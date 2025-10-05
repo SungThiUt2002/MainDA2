@@ -42,8 +42,15 @@ const InventoryDashboard = () => {
       setNeedingReorderItems(reorderRes.data || []);
       setAllInventoryItems(allItemsRes.data || []);
 
+      // Debug logging
+      console.log('📦 Inventory data loaded:');
+      console.log('- Low stock items:', lowStockRes.data?.length || 0);
+      console.log('- Reorder items:', reorderRes.data?.length || 0);
+      console.log('- All items:', allItemsRes.data?.length || 0);
+      console.log('- All items data:', allItemsRes.data);
+
       // Tính toán thống kê
-      const totalItems = allItemsRes.data.length;
+      const totalItems = allItemsRes.data?.length || 0;
       const outOfStock = allItemsRes.data.filter(item => item.isOutOfStock).length;
       const lowStock = allItemsRes.data.filter(item => item.isLowStock).length;
       const inStock = allItemsRes.data.filter(item => !item.isOutOfStock && !item.isLowStock).length;
@@ -229,7 +236,12 @@ const InventoryDashboard = () => {
       <div className="inventory-header">
         <h2>📦 Quản lý tồn kho</h2>
         <div className="header-actions">
-          <button className="import-btn" onClick={() => setShowImportModal(true)}>
+          <button className="import-btn" onClick={() => {
+            console.log('🔍 Opening import modal...');
+            console.log('📦 Available products:', allInventoryItems.length);
+            console.log('📦 Products data:', allInventoryItems);
+            setShowImportModal(true);
+          }}>
             📥 Nhập kho
           </button>
         <button className="refresh-btn" onClick={fetchInventoryData}>
@@ -268,15 +280,33 @@ const InventoryDashboard = () => {
                   className="product-select"
                 >
                   <option value="">-- Chọn sản phẩm --</option>
-                  {allInventoryItems.map((item) => (
-                    <option key={item.productId} value={item.productId}>
-                      {item.productName} (ID: {item.productId}) - Còn: {item.availableQuantity}
+                  {allInventoryItems.length > 0 ? (
+                    allInventoryItems.map((item) => (
+                      <option key={item.productId} value={item.productId}>
+                        {item.productName} (ID: {item.productId}) - Còn: {item.availableQuantity}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      🔄 Đang tải danh sách sản phẩm...
                     </option>
-                  ))}
+                  )}
                 </select>
                 {importForm.productName && (
                   <div className="selected-product-info">
                     <strong>Đã chọn:</strong> {importForm.productName}
+                  </div>
+                )}
+                {allInventoryItems.length === 0 && (
+                  <div className="no-products-warning">
+                    <p>⚠️ Không có sản phẩm nào trong kho. Vui lòng kiểm tra kết nối API hoặc thử lại.</p>
+                    <button 
+                      type="button" 
+                      className="refresh-data-btn"
+                      onClick={fetchInventoryData}
+                    >
+                      🔄 Tải lại dữ liệu
+                    </button>
                   </div>
                 )}
               </div>

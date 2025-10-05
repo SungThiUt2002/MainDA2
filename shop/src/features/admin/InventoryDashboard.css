@@ -226,6 +226,36 @@
   color: #059669;
 }
 
+.no-products-warning {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.no-products-warning p {
+  margin: 0 0 1rem 0;
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
+.refresh-data-btn {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.refresh-data-btn:hover {
+  background: #d97706;
+}
+
 .error-message {
   background: #fef2f2;
   color: #dc2626;
