@@ -51,9 +51,10 @@ const InventoryDashboard = () => {
 
       // Tính toán thống kê
       const totalItems = allItemsRes.data?.length || 0;
-      const outOfStock = allItemsRes.data.filter(item => item.isOutOfStock).length;
-      const lowStock = allItemsRes.data.filter(item => item.isLowStock).length;
-      const inStock = allItemsRes.data.filter(item => !item.isOutOfStock && !item.isLowStock).length;
+      const items = allItemsRes.data || [];
+      const outOfStock = items.filter(item => item.isOutOfStock).length;
+      const lowStock = items.filter(item => item.isLowStock).length;
+      const inStock = items.filter(item => !item.isOutOfStock && !item.isLowStock).length;
 
       setStats({
         totalItems,
