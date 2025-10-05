@@ -47,6 +47,11 @@ const InventoryDashboard = () => {
       setLowStockItems(lowStockData);
       setNeedingReorderItems(reorderData);
       setAllInventoryItems(allItemsData);
+      
+      // Debug logging
+      console.log('📦 Inventory data loaded:');
+      console.log('- All items count:', allItemsData.length);
+      console.log('- All items data:', allItemsData);
 
       // Tính toán thống kê
       const totalItems = allItemsRes.data?.length || 0;
@@ -241,7 +246,14 @@ const InventoryDashboard = () => {
       <div className="inventory-header">
         <h2>📦 Quản lý tồn kho</h2>
         <div className="header-actions">
-          <button className="import-btn" onClick={() => setShowImportModal(true)}>
+          <button className="import-btn" onClick={() => {
+            console.log('🔍 Opening import modal...');
+            console.log('📦 Current state:');
+            console.log('- allInventoryItems.length:', allInventoryItems.length);
+            console.log('- allInventoryItems:', allInventoryItems);
+            console.log('- loading state:', loading);
+            setShowImportModal(true);
+          }}>
             📥 Nhập kho
           </button>
         <button className="refresh-btn" onClick={fetchInventoryData}>
@@ -280,16 +292,16 @@ const InventoryDashboard = () => {
                   className="product-select"
                 >
                   <option value="">-- Chọn sản phẩm --</option>
-                  {loading ? (
-                    <option value="" disabled>
-                      🔄 Đang tải danh sách sản phẩm...
-                    </option>
-                  ) : allInventoryItems.length > 0 ? (
+                  {allInventoryItems.length > 0 ? (
                     allInventoryItems.map((item) => (
                       <option key={item.productId} value={item.productId}>
                         {item.productName} (ID: {item.productId}) - Còn: {item.availableQuantity}
                       </option>
                     ))
+                  ) : loading ? (
+                    <option value="" disabled>
+                      🔄 Đang tải danh sách sản phẩm...
+                    </option>
                   ) : (
                     <option value="" disabled>
                       ❌ Không có sản phẩm nào

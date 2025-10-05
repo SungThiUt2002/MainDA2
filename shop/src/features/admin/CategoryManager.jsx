@@ -174,49 +174,53 @@ const CategoryManager = () => {
         </div>
       </div>
 
-      <div className="category-grid">
+      <div className="category-list">
         {categories.length > 0 ? (
-          categories.map((category) => (
-            <div key={category.id} className="category-card">
-                             <div className="category-image">
-                 <div className="category-image-placeholder">
-                   📂
-                 </div>
-               </div>
-              
-              <div className="category-content">
-                <div className="category-header-info">
-                  <h3 className="category-name">{category.name}</h3>
+          <div className="category-table">
+            <div className="category-table-header">
+              <div className="table-col-name">Tên danh mục</div>
+              <div className="table-col-description">Mô tả</div>
+              <div className="table-col-status">Trạng thái</div>
+              <div className="table-col-products">Sản phẩm</div>
+              <div className="table-col-actions">Thao tác</div>
+            </div>
+            {categories.map((category) => (
+              <div key={category.id} className="category-row">
+                <div className="table-col-name">
+                  <div className="category-name">{category.name}</div>
+                </div>
+                <div className="table-col-description">
+                  <div className="category-description">
+                    {category.description || "Chưa có mô tả"}
+                  </div>
+                </div>
+                <div className="table-col-status">
                   {getStatusBadge(category.status || "ACTIVE")}
                 </div>
-                
-                <p className="category-description">
-                  {category.description || "Chưa có mô tả"}
-                </p>
-                
-                <div className="category-meta">
+                <div className="table-col-products">
                   <span className="product-count">
-                    {category.products?.length || 0} sản phẩm
+                    {category.products?.length || 0}
                   </span>
                 </div>
-                
-                <div className="category-actions">
-                  <button 
-                    className="edit-btn"
-                    onClick={() => handleOpenModal(category)}
-                  >
-                    ✏️ Sửa
-                  </button>
-                  <button 
-                    className="delete-btn"
-                    onClick={() => handleDelete(category.id)}
-                  >
-                    🗑️ Xóa
-                  </button>
+                <div className="table-col-actions">
+                  <div className="category-actions">
+                    <button 
+                      className="edit-btn"
+                      onClick={() => handleOpenModal(category)}
+                    >
+                      ✏️ Sửa
+                    </button>
+                    <button 
+                      className="delete-btn"
+                      onClick={() => handleDelete(category.id)}
+                    >
+                      🗑️ Xóa
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
           <div className="no-categories">
             <div className="no-categories-icon">📂</div>

@@ -99,94 +99,104 @@
   font-weight: 700;
 }
 
-/* Category Grid */
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
-}
-
-.category-card {
+/* Category List */
+.category-list {
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  transition: all 0.3s ease;
 }
 
-.category-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+.category-table {
+  width: 100%;
 }
 
-.category-image {
-  position: relative;
-  height: 160px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.category-table-header {
+  display: grid;
+  grid-template-columns: 2fr 3fr 1fr 1fr 1.5fr;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-bottom: 2px solid #e2e8f0;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.category-row {
+  display: grid;
+  grid-template-columns: 2fr 3fr 1fr 1fr 1.5fr;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.category-row:hover {
+  background-color: #f8f9fa;
+}
+
+.category-row:last-child {
+  border-bottom: none;
+}
+
+.table-col-name {
+  display: flex;
+  align-items: center;
+}
+
+.table-col-description {
+  display: flex;
+  align-items: center;
+}
+
+.table-col-status {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.category-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.category-image-placeholder {
+.table-col-products {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 48px;
-  color: white;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.category-content {
-  padding: 20px;
-}
-
-.category-header-info {
+.table-col-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .category-name {
   margin: 0;
   color: #1e293b;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  flex: 1;
-  margin-right: 12px;
 }
 
 .category-description {
   color: #64748b;
   font-size: 14px;
-  line-height: 1.5;
-  margin: 0 0 16px 0;
+  line-height: 1.4;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.category-meta {
-  margin-bottom: 16px;
 }
 
 .product-count {
   background: #f1f5f9;
   color: #475569;
-  padding: 6px 12px;
-  border-radius: 20px;
+  padding: 4px 8px;
+  border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
+  min-width: 30px;
+  text-align: center;
 }
 
 /* Status Badge */
@@ -470,29 +480,73 @@
     grid-template-columns: 1fr;
   }
 
-  .category-grid {
+  .category-table-header,
+  .category-row {
     grid-template-columns: 1fr;
-  }
-
-  .category-card {
-    max-width: 100%;
-  }
-
-  .category-header-info {
-    flex-direction: column;
     gap: 8px;
+    text-align: left;
   }
 
-  .category-name {
-    margin-right: 0;
+  .category-table-header {
+    display: none;
+  }
+
+  .category-row {
+    display: block;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .table-col-name,
+  .table-col-description,
+  .table-col-status,
+  .table-col-products,
+  .table-col-actions {
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .table-col-name::before {
+    content: "Tên: ";
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .table-col-description::before {
+    content: "Mô tả: ";
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .table-col-status::before {
+    content: "Trạng thái: ";
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .table-col-products::before {
+    content: "Sản phẩm: ";
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .table-col-actions::before {
+    content: "Thao tác: ";
+    font-weight: 600;
+    color: #374151;
   }
 
   .category-actions {
-    flex-direction: column;
+    flex-direction: row;
+    gap: 8px;
   }
 
   .edit-btn, .delete-btn {
-    width: 100%;
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 12px;
   }
 
   .modal {
