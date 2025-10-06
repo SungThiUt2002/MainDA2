@@ -762,15 +762,7 @@ const ProductManager = () => {
         <div className="modal-overlay">
           <div className="modal product-form-modal">
             <div className="modal-header">
-              <div className="header-content">
-                <div className="header-icon">
-                  {editingProduct ? "✏️" : "➕"}
-                </div>
-                <div className="header-text">
-                  <h3>{editingProduct ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}</h3>
-                  <p>{editingProduct ? "Cập nhật thông tin sản phẩm" : "Tạo sản phẩm mới cho cửa hàng"}</p>
-                </div>
-              </div>
+              <h3>{editingProduct ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}</h3>
               <button 
                 className="close-btn"
                 onClick={() => setShowProductModal(false)}
