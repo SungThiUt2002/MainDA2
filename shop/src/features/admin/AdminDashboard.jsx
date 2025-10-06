@@ -21,7 +21,6 @@ const AdminDashboard = () => {
     users: 0,
     products: 0,
     orders: 0,
-    revenue: 0,
   });
   const [users, setUsers] = useState([]);
   const [userLoading, setUserLoading] = useState(false);
@@ -109,13 +108,10 @@ const AdminDashboard = () => {
       
       console.log("✅ Order count được xử lý:", orderCount);
       
-      // TODO: Gọi API thực tế để lấy thống kê doanh thu
-      // Tạm thời dùng mock data cho doanh thu
       setStats({
         users: userCount,
         products: productCount,
         orders: orderCount,
-        revenue: 120000000,
       });
     } catch (error) {
       console.error("Lỗi khi tải thống kê:", error);
@@ -124,7 +120,6 @@ const AdminDashboard = () => {
         users: 0,
         products: 0,
         orders: 0,
-        revenue: 120000000,
       });
     } finally {
       setStatsLoading(false);
@@ -196,12 +191,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
 
   const fetchInventoryStats = async () => {
     try {
@@ -287,16 +276,6 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-                  <div className="stat-card">
-            <div className="stat-icon">💰</div>
-            <div className="stat-info">
-              <h3>Doanh thu</h3>
-              <p className="stat-number">{formatCurrency(stats.revenue)}</p>
-              <span className="stat-change positive">
-                Dữ liệu thực tế từ hệ thống
-              </span>
-            </div>
-          </div>
         </div>
       )}
 

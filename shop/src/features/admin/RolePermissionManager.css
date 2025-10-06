@@ -1,74 +1,321 @@
+/* RolePermissionManager.css - Simple Clean Design */
 .role-permission-manager {
-  padding: 2rem;
+  padding: 1.5rem;
   background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  margin: 2rem auto;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin: 1rem auto;
   max-width: 900px;
 }
 
+/* Tab Header */
 .tab-header {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1rem;
 }
 
 .tab-header button {
-  padding: 8px 18px;
-  border: none;
-  border-radius: 6px;
-  background: #4f8abf;
-  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  color: #374151;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.tab-header button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
 .tab-header button.active {
-  background: #f53d2d;
+  background: #374151;
   color: #fff;
+  border-color: #374151;
 }
 
+/* Section Headers */
+.role-permission-manager h3 {
+  color: #111827;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.role-permission-manager h4 {
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 1rem 0;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Tables */
 .role-table, .permission-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .role-table th, .role-table td,
 .permission-table th, .permission-table td {
-  border: 1px solid #eee;
-  padding: 8px 12px;
+  padding: 0.75rem;
   text-align: left;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .role-table th, .permission-table th {
-  background: #fafafa;
+  background: #f9fafb;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.875rem;
 }
 
+.role-table tr:last-child td,
+.permission-table tr:last-child td {
+  border-bottom: none;
+}
+
+.role-table tr:hover,
+.permission-table tr:hover {
+  background: #f9fafb;
+}
+
+/* Action Buttons in Tables */
+.role-table button, .permission-table button {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 0.5rem;
+  background: #fff;
+}
+
+.role-table button:first-child,
+.permission-table button:first-child {
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.role-table button:first-child:hover,
+.permission-table button:first-child:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.role-table button:last-child,
+.permission-table button:last-child {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.role-table button:last-child:hover,
+.permission-table button:last-child:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+/* Forms */
 .role-form, .permission-form {
-  display: flex;
-  gap: 1rem;
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
   margin-top: 1rem;
-  flex-wrap: wrap;
 }
 
 .role-form input, .permission-form input {
-  padding: 6px 10px;
-  border: 1px solid #ccc;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
   border-radius: 4px;
+  font-size: 0.9rem;
+  background: #fff;
+  transition: all 0.2s ease;
+  margin-bottom: 0.75rem;
+  width: 100%;
+  max-width: 300px;
 }
 
-.role-form button, .permission-form button {
-  padding: 6px 16px;
-  border: none;
+.role-form input:focus, .permission-form input:focus {
+  outline: none;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+}
+
+/* Permission Checkboxes */
+.role-form > div {
+  margin: 1rem 0;
+}
+
+.role-form > div > span {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.role-form label {
+  display: inline-flex;
+  align-items: center;
+  margin: 0.25rem 0.75rem 0.25rem 0;
+  padding: 0.25rem 0.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
   border-radius: 4px;
-  background: #f53d2d;
-  color: #fff;
-  font-weight: bold;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
 }
 
+.role-form label:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.role-form label input[type="checkbox"] {
+  margin: 0 0.5rem 0 0;
+  width: auto;
+  max-width: none;
+}
+
+.role-form label input[type="checkbox"]:checked + span {
+  color: #374151;
+  font-weight: 500;
+}
+
+/* Form Buttons */
+.role-form button, .permission-form button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+  margin-top: 0.5rem;
+  background: #fff;
+}
+
+.role-form button[type="submit"],
+.permission-form button[type="submit"] {
+  background: #374151;
+  color: #fff;
+  border-color: #374151;
+}
+
+.role-form button[type="submit"]:hover,
+.permission-form button[type="submit"]:hover {
+  background: #1f2937;
+  border-color: #1f2937;
+}
+
+.role-form button[type="button"],
+.permission-form button[type="button"] {
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.role-form button[type="button"]:hover,
+.permission-form button[type="button"]:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Error Message */
 .error-message {
-  color: red;
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
   margin-bottom: 1rem;
+  border: 1px solid #fecaca;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Permission Display in Table */
+.role-table td:nth-child(3) {
+  max-width: 200px;
+  word-wrap: break-word;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .role-permission-manager {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+  
+  .tab-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .tab-header button {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .role-table, .permission-table {
+    font-size: 0.85rem;
+  }
+  
+  .role-table th, .role-table td,
+  .permission-table th, .permission-table td {
+    padding: 0.5rem;
+  }
+  
+  .role-form, .permission-form {
+    padding: 0.75rem;
+  }
+  
+  .role-form input, .permission-form input {
+    max-width: 100%;
+  }
+  
+  .role-form label {
+    display: block;
+    margin: 0.25rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .role-permission-manager h3 {
+    font-size: 1.1rem;
+  }
+  
+  .role-table, .permission-table {
+    font-size: 0.8rem;
+  }
+  
+  .role-table th, .role-table td,
+  .permission-table th, .permission-table td {
+    padding: 0.4rem;
+  }
+  
+  .role-table button, .permission-table button {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+  }
 }

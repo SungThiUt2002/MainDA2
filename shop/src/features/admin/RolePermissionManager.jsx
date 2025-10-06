@@ -149,14 +149,18 @@ const RolePermissionManager = () => {
   return (
     <div className="role-permission-manager">
       <div className="tab-header">
-        <button onClick={() => setActiveTab("roles")} className={activeTab === "roles" ? "active" : ""}>Quản lý Role</button>
-        <button onClick={() => setActiveTab("permissions")} className={activeTab === "permissions" ? "active" : ""}>Quản lý Permission</button>
+        <button onClick={() => setActiveTab("roles")} className={activeTab === "roles" ? "active" : ""}>
+          Quản lý Role
+        </button>
+        <button onClick={() => setActiveTab("permissions")} className={activeTab === "permissions" ? "active" : ""}>
+          Quản lý Permission
+        </button>
       </div>
       {error && <div className="error-message">{error}</div>}
 
       {activeTab === "roles" && (
         <div>
-          <h3>Danh sách Role</h3>
+          <h3>Danh sách Role ({roles.length})</h3>
           <table className="role-table">
             <thead>
               <tr>
@@ -174,7 +178,7 @@ const RolePermissionManager = () => {
                   <td>
                     {role.permissions && role.permissions.length > 0
                       ? role.permissions.map((p) => p.name).join(", ")
-                      : ""}
+                      : "Không có quyền"}
                   </td>
                   <td>
                     <button onClick={() => handleEditRole(role)}>Sửa</button>
@@ -186,30 +190,57 @@ const RolePermissionManager = () => {
           </table>
           <h4>{editingRole ? "Sửa Role" : "Thêm Role mới"}</h4>
           <form className="role-form" onSubmit={handleAddOrUpdateRole}>
-            <input name="name" placeholder="Tên role" value={roleForm.name} onChange={handleRoleFormChange} required />
-            <input name="description" placeholder="Mô tả" value={roleForm.description} onChange={handleRoleFormChange} />
-            <div>
-              <span>Chọn quyền:</span>
-              {permissions.map((perm) => (
-                <label key={perm.id} style={{ marginRight: 8 }}>
-                  <input
-                    type="checkbox"
-                    checked={roleForm.permissions.includes(perm.name)}
-                    onChange={() => handleRolePermissionChange(perm.name)}
-                  />
-                  {perm.name}
-                </label>
-              ))}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <input 
+                name="name" 
+                placeholder="Tên role (VD: ADMIN, USER)" 
+                value={roleForm.name} 
+                onChange={handleRoleFormChange} 
+                required 
+              />
+              <input 
+                name="description" 
+                placeholder="Mô tả role" 
+                value={roleForm.description} 
+                onChange={handleRoleFormChange} 
+              />
             </div>
-            <button type="submit">{editingRole ? "Cập nhật" : "Thêm Role"}</button>
-            {editingRole && <button type="button" onClick={() => { setEditingRole(null); setRoleForm({ name: "", description: "", permissions: [] }); }}>Hủy</button>}
+            <div>
+              <span>Chọn quyền ({roleForm.permissions.length} đã chọn):</span>
+              <div style={{ marginTop: '0.5rem' }}>
+                {permissions.map((perm) => (
+                  <label key={perm.id}>
+                    <input
+                      type="checkbox"
+                      checked={roleForm.permissions.includes(perm.name)}
+                      onChange={() => handleRolePermissionChange(perm.name)}
+                    />
+                    <span>{perm.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginTop: '1rem' }}>
+              <button type="submit">{editingRole ? "Cập nhật Role" : "Thêm Role"}</button>
+              {editingRole && (
+                <button 
+                  type="button" 
+                  onClick={() => { 
+                    setEditingRole(null); 
+                    setRoleForm({ name: "", description: "", permissions: [] }); 
+                  }}
+                >
+                  Hủy
+                </button>
+              )}
+            </div>
           </form>
         </div>
       )}
 
       {activeTab === "permissions" && (
         <div>
-          <h3>Danh sách Permission</h3>
+          <h3>Danh sách Permission ({permissions.length})</h3>
           <table className="permission-table">
             <thead>
               <tr>
@@ -233,10 +264,35 @@ const RolePermissionManager = () => {
           </table>
           <h4>{editingPermission ? "Sửa Permission" : "Thêm Permission mới"}</h4>
           <form className="permission-form" onSubmit={handleAddOrUpdatePermission}>
-            <input name="name" placeholder="Tên permission" value={permissionForm.name} onChange={handlePermissionFormChange} required />
-            <input name="description" placeholder="Mô tả" value={permissionForm.description} onChange={handlePermissionFormChange} />
-            <button type="submit">{editingPermission ? "Cập nhật" : "Thêm Permission"}</button>
-            {editingPermission && <button type="button" onClick={() => { setEditingPermission(null); setPermissionForm({ name: "", description: "" }); }}>Hủy</button>}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <input 
+                name="name" 
+                placeholder="Tên permission (VD: READ_USERS, WRITE_PRODUCTS)" 
+                value={permissionForm.name} 
+                onChange={handlePermissionFormChange} 
+                required 
+              />
+              <input 
+                name="description" 
+                placeholder="Mô tả permission" 
+                value={permissionForm.description} 
+                onChange={handlePermissionFormChange} 
+              />
+            </div>
+            <div style={{ marginTop: '1rem' }}>
+              <button type="submit">{editingPermission ? "Cập nhật Permission" : "Thêm Permission"}</button>
+              {editingPermission && (
+                <button 
+                  type="button" 
+                  onClick={() => { 
+                    setEditingPermission(null); 
+                    setPermissionForm({ name: "", description: "" }); 
+                  }}
+                >
+                  Hủy
+                </button>
+              )}
+            </div>
           </form>
         </div>
       )}
