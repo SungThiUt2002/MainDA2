@@ -21,5 +21,6 @@ public interface BrandMapper {
 
     @Mapping(target = "products", ignore = true)
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "isActive", expression = "java(request.getStatus() != null && request.getStatus().equals(\"ACTIVE\"))")
     void updateBrandFromDto(UpdateBrandRequest request, @MappingTarget Brand brand);
 } 

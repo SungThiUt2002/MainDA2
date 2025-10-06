@@ -12,4 +12,6 @@ public class CreateBrandRequest {
     private String name;
 
     private String description;
+    
+    private String status = "ACTIVE"; // Default status
 } 
