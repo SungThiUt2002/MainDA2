@@ -82,8 +82,6 @@ const InventoryDashboard = () => {
       setImportError("");
       setImportSuccess("");
 
-      // Debug token trước khi lấy
-      debugToken();
 
       // Thử lấy token từ nhiều nguồn khác nhau
       let token = localStorage.getItem("accessToken");
@@ -181,30 +179,6 @@ const InventoryDashboard = () => {
     }));
   };
 
-  const debugToken = () => {
-    const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
-    
-    console.log('=== TOKEN DEBUG ===');
-    console.log('Token exists:', !!token);
-    if (token) {
-      console.log('Token length:', token.length);
-      console.log('Token preview:', token.substring(0, 50) + '...');
-      console.log('Token format:', token.split('.').length === 3 ? 'Valid JWT format' : 'Invalid format');
-      
-      // Decode JWT token để kiểm tra
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('Token payload:', payload);
-        console.log('Token expires at:', new Date(payload.exp * 1000));
-        console.log('Token is expired:', Date.now() > payload.exp * 1000);
-      } catch (error) {
-        console.log('Cannot decode token:', error.message);
-      }
-    }
-    console.log('localStorage keys:', Object.keys(localStorage));
-    console.log('sessionStorage keys:', Object.keys(sessionStorage));
-    console.log('==================');
-  };
 
   const getStockStatusColor = (item) => {
     if (item.isOutOfStock) return "#dc2626";
@@ -350,14 +324,6 @@ const InventoryDashboard = () => {
               )}
 
               <div className="modal-actions">
-                <button 
-                  type="button" 
-                  className="debug-btn"
-                  onClick={debugToken}
-                  disabled={importLoading}
-                >
-                  🔍 Debug Token
-                </button>
                 <button 
                   type="button" 
                   className="cancel-btn"

@@ -776,13 +776,13 @@ const ProductManager = () => {
                 {/* Basic Information Section */}
                 <div className="form-section">
                   <div className="section-header">
-                    <span className="section-icon">📝</span>
+                    <span className="section-icon"></span>
                     <h4>Thông tin cơ bản</h4>
                   </div>
                   
                   <div className="form-group">
                     <label className="form-label">
-                      <span className="label-icon">🏷️</span>
+                      <span className="label-icon"></span>
                       Tên sản phẩm
                       <span className="required">*</span>
                     </label>
@@ -798,7 +798,7 @@ const ProductManager = () => {
 
                   <div className="form-group">
                     <label className="form-label">
-                      <span className="label-icon">📄</span>
+                      <span className="label-icon"></span>
                       Mô tả sản phẩm
                       <span className="required">*</span>
                     </label>
@@ -817,14 +817,14 @@ const ProductManager = () => {
                 {/* Pricing & Category Section */}
                 <div className="form-section">
                   <div className="section-header">
-                    <span className="section-icon">💰</span>
+                    <span className="section-icon"></span>
                     <h4>Giá cả & Phân loại</h4>
                   </div>
                   
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">
-                        <span className="label-icon">💵</span>
+                        <span className="label-icon"></span>
                         Giá sản phẩm
                         <span className="required">*</span>
                       </label>
@@ -848,7 +848,7 @@ const ProductManager = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">
-                        <span className="label-icon">📂</span>
+                        <span className="label-icon"></span>
                         Danh mục
                         <span className="required">*</span>
                       </label>
@@ -870,7 +870,7 @@ const ProductManager = () => {
 
                     <div className="form-group">
                       <label className="form-label">
-                        <span className="label-icon">🏢</span>
+                        <span className="label-icon"></span>
                         Thương hiệu
                         <span className="required">*</span>
                       </label>
@@ -895,7 +895,7 @@ const ProductManager = () => {
                 {/* Status Section */}
                 <div className="form-section">
                   <div className="section-header">
-                    <span className="section-icon">⚙️</span>
+                    <span className="section-icon"></span>
                     <h4>Trạng thái</h4>
                   </div>
                   
@@ -910,7 +910,7 @@ const ProductManager = () => {
                       />
                       <span className="checkbox-custom"></span>
                       <span className="checkbox-text">
-                        <span className="checkbox-icon">✅</span>
+                        <span className="checkbox-icon"></span>
                         Sản phẩm đang hoạt động
                       </span>
                     </label>
