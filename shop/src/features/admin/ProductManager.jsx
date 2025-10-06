@@ -14,6 +14,7 @@ import {
 import { getAllInventoryItems, getInventoryByProductId } from "../../api/inventoryApi";
 import AdvancedSearchFilter from "./AdvancedSearchFilter";
 import "./ProductManager.css";
+import API_CONFIG from "../../config/apiConfig";
 
 const ProductManager = () => {
   const [products, setProducts] = useState([]);
@@ -496,7 +497,7 @@ const ProductManager = () => {
                   <div className="product-image-container">
                     {product.images && product.images.length > 0 ? (
                       <img
-                        src={`http://localhost:9001/images/${product.images[0].url || product.images[0]}`}
+                        src={`${API_CONFIG.PRODUCT_SERVICE.IMAGE_BASE_URL}${product.images[0].url || product.images[0]}`}
                         alt={product.name}
                         className="thumb"
                         onError={(e) => {
@@ -612,7 +613,7 @@ const ProductManager = () => {
                     selectedProduct.images.map((image, index) => (
                       <div key={index} className={`image-item ${index === 0 ? 'thumbnail' : ''}`}>
                         <img
-                          src={`http://localhost:9001/images/${typeof image === 'object' ? image.url : image}`}
+                          src={`${API_CONFIG.PRODUCT_SERVICE.IMAGE_BASE_URL}${typeof image === 'object' ? image.url : image}`}
                           alt={`${selectedProduct.name} ${index + 1}`}
                           className={index === 0 ? 'main-image' : 'gallery-image'}
                         />
@@ -985,7 +986,7 @@ const ProductManager = () => {
                       selectedProduct.images.map((image, index) => (
                         <div key={index} className="image-item">
                           <img
-                            src={`http://localhost:9001/images/${typeof image === 'object' ? image.url : image}`}
+                            src={`${API_CONFIG.PRODUCT_SERVICE.IMAGE_BASE_URL}${typeof image === 'object' ? image.url : image}`}
                             alt={`${selectedProduct.name} ${index + 1}`}
                             className="manage-image"
                           />

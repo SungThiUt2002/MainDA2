@@ -28,7 +28,7 @@ import java.util.List;
 public class ProductImageController {
     private final ProductImageService productImageService;
     private final ProductImageMapper productImageMapper;
-    private final Path imagesPath = Paths.get("../images");
+    private final Path imagesPath = Paths.get("/app/images");
 
     // ==================== API QUẢN LÝ ẢNH SẢN PHẨM ====================
     

@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getProductsByCategory, getAllCategories } from "../../api/productApi";
 import "../../styles/Header.css";
 import "./CategoryProducts.css";
+import API_CONFIG from "../../config/apiConfig";
 
-const IMAGE_BASE_URL = "http://localhost:9001/images/";
+const IMAGE_BASE_URL = API_CONFIG.PRODUCT_SERVICE.IMAGE_BASE_URL;
 
 const CategoryProducts = () => {
   const { categoryId } = useParams();

@@ -4,9 +4,10 @@ import {
   getProductImages,
   addProductImage,
   deleteProductImage,
-  setThumbnailImage,
+  setProductThumbnail,
   updateProductImage,
 } from "../../api/productApi";
+import API_CONFIG from "../../config/apiConfig";
 
 const ProductImageManager = ({ productId, onImagesChange, onClose }) => {
   console.log("ProductImageManager rendered with productId:", productId); // Debug log
@@ -131,7 +132,7 @@ const ProductImageManager = ({ productId, onImagesChange, onClose }) => {
 
   const handleSetThumbnail = async (imageId) => {
     try {
-      await setThumbnailImage(productId, imageId, token);
+      await setProductThumbnail(productId, imageId, token);
       await fetchImages();
       setSuccessMessage("Đã đặt ảnh đại diện thành công!");
       setTimeout(() => setSuccessMessage(""), 3000);
@@ -150,7 +151,7 @@ const ProductImageManager = ({ productId, onImagesChange, onClose }) => {
     if (/^https?:\/\//.test(image.url)) {
       return image.url;
     }
-    return `http://localhost:9001/images/${image.url}`;
+    return `${API_CONFIG.PRODUCT_SERVICE.IMAGE_BASE_URL}${image.url}`;
   };
 
   const reorderImages = async (fromIndex, toIndex) => {

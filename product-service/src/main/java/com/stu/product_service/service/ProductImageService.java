@@ -123,7 +123,7 @@ public class ProductImageService {
 
         // Lưu file vào thư mục
         try {
-            Path uploadDir = Paths.get("../images");
+            Path uploadDir = Paths.get("/app/images");
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
             }
@@ -198,7 +198,7 @@ public class ProductImageService {
         
         // Xóa file thực tế nếu có
         try {
-            Path filePath = Paths.get("../images", image.getUrl());
+            Path filePath = Paths.get("/app/images", image.getUrl());
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
             }

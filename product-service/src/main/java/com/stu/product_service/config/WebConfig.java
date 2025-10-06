@@ -13,11 +13,11 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         log.info("Configuring resource handlers for images...");
         
-        // Serve static images from MainDA2/images directory
+        // Serve static images from mounted volume directory
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:../images/");
+                .addResourceLocations("file:/app/images/");
         
-        log.info("Registered /images/** handler with location: file:../images/");
+        log.info("Registered /images/** handler with location: file:/app/images/");
         
         // Fallback to classpath if needed
         registry.addResourceHandler("/static/images/**")

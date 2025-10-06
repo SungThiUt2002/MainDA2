@@ -4,6 +4,7 @@ import { getProductById } from "../../api/productApi";
 import { addToCart } from "../../api/cartApi";
 import { getInventoryByProductId } from "../../api/inventoryApi";
 import "./ProductDetailPage.css";
+import API_CONFIG from "../../config/apiConfig";
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -94,7 +95,7 @@ const ProductDetailPage = () => {
         <div className="image-gallery">
           <div className="main-image">
             <img
-              src={`http://localhost:9001/images/${mainImage}`}
+              src={`${API_CONFIG.PRODUCT_SERVICE.IMAGE_BASE_URL}${mainImage}`}
               alt={product.name}
               className="product-main-img"
             />
@@ -104,7 +105,7 @@ const ProductDetailPage = () => {
               {product.images && product.images.length > 0 ? product.images.map((img) => (
                 <img
                   key={img.id || img}
-                  src={`http://localhost:9001/images/${typeof img === 'object' ? img.url : img}`}
+                  src={`${API_CONFIG.PRODUCT_SERVICE.IMAGE_BASE_URL}${typeof img === 'object' ? img.url : img}`}
                   alt="thumbnail"
                   className={`thumbnail ${mainImage === (typeof img === 'object' ? img.url : img) ? "active" : ""}`}
                   onClick={() => setMainImage(typeof img === 'object' ? img.url : img)}

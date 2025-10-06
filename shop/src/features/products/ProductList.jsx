@@ -8,8 +8,9 @@ import Slider from "react-slick";
 import "./ProductList.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import API_CONFIG from "../../config/apiConfig";
 
-const IMAGE_BASE_URL = "http://localhost:9001/images/";
+const IMAGE_BASE_URL = API_CONFIG.PRODUCT_SERVICE.IMAGE_BASE_URL;
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);

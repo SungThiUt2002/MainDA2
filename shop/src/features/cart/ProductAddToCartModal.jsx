@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import "./ProductAddToCartModal.css";
+import API_CONFIG from "../../config/apiConfig";
 
 const ProductAddToCartModal = ({ product, onClose, onConfirm }) => {
   const [variants, setVariants] = useState([]);
@@ -14,7 +15,7 @@ const ProductAddToCartModal = ({ product, onClose, onConfirm }) => {
   useEffect(() => {
     const fetchVariants = async () => {
       try {
-        const res = await fetch(`http://localhost:9001/api/products/${product.id}/variants`);
+        const res = await fetch(`${API_CONFIG.PRODUCT_SERVICE.BASE_URL}/api/products/${product.id}/variants`);
         const data = await res.json();
         setVariants(data);
 
@@ -78,7 +79,7 @@ const ProductAddToCartModal = ({ product, onClose, onConfirm }) => {
         {selectedImage && (
           <div className="variant-image">
             <img
-              src={`http://localhost:9004/images/${selectedImage}`}
+              src={`${API_CONFIG.PRODUCT_SERVICE.IMAGE_BASE_URL}${selectedImage}`}
               alt="variant"
             />
           </div>
