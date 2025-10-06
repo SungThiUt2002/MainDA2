@@ -4,28 +4,22 @@ import {
   getPendingConfirmationOrders, 
   getOrdersByStatus, 
   getOrderById, 
-  adminConfirmOrder,
-  updateShippingStatus,
-  getOrderStatuses
+  adminConfirmOrder 
 } from "../../api/orderApi";
 import "./OrderManager.css";
 
 const OrderManager = () => {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
   const [confirmingOrder, setConfirmingOrder] = useState(null);
-  const [showStatusUpdateModal, setShowStatusUpdateModal] = useState(false);
-  const [updatingStatus, setUpdatingStatus] = useState(null);
-  const [statusUpdateData, setStatusUpdateData] = useState({
-    newStatus: "",
-    description: ""
-  });
-  const [orderStatuses, setOrderStatuses] = useState([]);
-  const [loadingStatuses, setLoadingStatuses] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   const token = localStorage.getItem("accessToken");
 
@@ -51,9 +45,6 @@ const OrderManager = () => {
         case "cancelled":
           response = await getOrdersByStatus("CANCELLED", token);
           break;
-        case "returned":
-          response = await getOrdersByStatus("RETURNED", token);
-          break;
         default:
           response = await getAllOrders(token);
       }
@@ -70,6 +61,42 @@ const OrderManager = () => {
   useEffect(() => {
     fetchOrders(selectedFilter);
   }, [fetchOrders, selectedFilter]);
+
+  // Filter and sort orders
+  useEffect(() => {
+    let filtered = [...orders];
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(order => 
+        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (order.receiverName && order.receiverName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.receiverPhone && order.receiverPhone.includes(searchTerm)) ||
+        (order.items && order.items.some(item => 
+          item.productName.toLowerCase().includes(searchTerm.toLowerCase())
+        ))
+      );
+    }
+
+    // Sort orders
+    filtered.sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+
+      if (sortBy === "createdAt" || sortBy === "updatedAt") {
+        aValue = new Date(aValue);
+        bValue = new Date(bValue);
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setFilteredOrders(filtered);
+  }, [orders, searchTerm, sortBy, sortOrder]);
 
   // Handle filter change
   const handleFilterChange = (filter) => {
@@ -105,66 +132,6 @@ const OrderManager = () => {
     }
   };
 
-  // Handle update shipping status
-  const handleUpdateShippingStatus = async (orderId) => {
-    if (!statusUpdateData.newStatus) {
-      alert("Vui lòng chọn trạng thái mới!");
-      return;
-    }
-
-    setUpdatingStatus(orderId);
-    try {
-      await updateShippingStatus(orderId, statusUpdateData, token);
-      alert("✅ Cập nhật trạng thái thành công!");
-      setShowStatusUpdateModal(false);
-      setStatusUpdateData({ newStatus: "", description: "" });
-      fetchOrders(selectedFilter); // Refresh list
-    } catch (err) {
-      console.error("❌ Lỗi cập nhật trạng thái:", err);
-      alert("❌ Cập nhật trạng thái thất bại!");
-    } finally {
-      setUpdatingStatus(null);
-    }
-  };
-
-  // Handle open status update modal
-  const handleOpenStatusUpdateModal = (order) => {
-    setSelectedOrder(order);
-    setShowStatusUpdateModal(true);
-  };
-
-  // Load order statuses from backend
-  const loadOrderStatuses = useCallback(async () => {
-    setLoadingStatuses(true);
-    try {
-      const statuses = await getOrderStatuses(token);
-      setOrderStatuses(statuses);
-    } catch (err) {
-      console.error("❌ Lỗi load danh sách trạng thái:", err);
-    } finally {
-      setLoadingStatuses(false);
-    }
-  }, [token]);
-
-  // Get valid next statuses based on current status
-  const getValidNextStatuses = (currentStatus) => {
-    switch (currentStatus) {
-      case "CONFIRMED":
-        return ["DELIVERING"];
-      case "DELIVERING":
-        return ["DELIVERY_SUCCESSFUL", "RETURNED"]; // Có thể trả hàng trong quá trình giao
-      case "DELIVERY_SUCCESSFUL":
-        return ["RETURNED"]; // Có thể trả hàng sau khi giao thành công
-      default:
-        return [];
-    }
-  };
-
-  // Load statuses when component mounts
-  useEffect(() => {
-    loadOrderStatuses();
-  }, [loadOrderStatuses]);
-
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -189,28 +156,10 @@ const OrderManager = () => {
       DELIVERY_SUCCESSFUL: { label: "Giao thành công", className: "status-delivered" },
       CANCELLED: { label: "Đã hủy", className: "status-cancelled" },
       PAYMENT_FAILED: { label: "Thanh toán thất bại", className: "status-failed" },
-      RETURNED: { label: "Đã trả lại", className: "status-returned" },
     };
     
     const config = statusConfig[status] || { label: status, className: "status-unknown" };
     return <span className={`status-badge ${config.className}`}>{config.label}</span>;
-  };
-
-  // Get status label
-  const getStatusLabel = (status) => {
-    const statusConfig = {
-      CREATED: "Đã tạo",
-      PENDING_CONFIRMATION: "Chờ xác nhận",
-      PENDING_PAYMENT: "Chờ thanh toán",
-      CONFIRMED: "Đã xác nhận",
-      DELIVERING: "Đang giao",
-      DELIVERY_SUCCESSFUL: "Giao thành công",
-      CANCELLED: "Đã hủy",
-      PAYMENT_FAILED: "Thanh toán thất bại",
-      RETURNED: "Đã trả lại",
-    };
-    
-    return statusConfig[status] || status;
   };
 
   // Get payment method label
@@ -226,49 +175,86 @@ const OrderManager = () => {
   return (
     <div className="order-manager">
       <div className="order-manager-header">
-        <h2>🛒 Quản lý đơn hàng</h2>
+        <div className="header-content">
+          <h2>🛒 Quản lý đơn hàng</h2>
+          <div className="order-stats">
+            <span className="stat-item">
+              <strong>{filteredOrders.length}</strong> đơn hàng
+            </span>
+            {selectedFilter !== "all" && (
+              <span className="stat-item">
+                <strong>{orders.length}</strong> tổng cộng
+              </span>
+            )}
+          </div>
+        </div>
+        
+        <div className="search-and-filters">
+          <div className="search-container">
+            <input
+              type="text"
+              placeholder="🔍 Tìm kiếm theo mã đơn, tên khách hàng, sản phẩm..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          
+          <div className="sort-container">
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className="sort-select"
+            >
+              <option value="createdAt">Sắp xếp theo ngày tạo</option>
+              <option value="totalAmount">Sắp xếp theo tổng tiền</option>
+              <option value="status">Sắp xếp theo trạng thái</option>
+            </select>
+            <button
+              className={`sort-order-btn ${sortOrder === "desc" ? "desc" : "asc"}`}
+              onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
+            >
+              {sortOrder === "desc" ? "↓" : "↑"}
+            </button>
+          </div>
+        </div>
+
         <div className="order-filters">
           <button
             className={`filter-btn ${selectedFilter === "all" ? "active" : ""}`}
             onClick={() => handleFilterChange("all")}
           >
-            Tất cả
+            📋 Tất cả
           </button>
           <button
             className={`filter-btn ${selectedFilter === "pending" ? "active" : ""}`}
             onClick={() => handleFilterChange("pending")}
           >
-            Chờ xác nhận
+            ⏳ Chờ xác nhận
           </button>
           <button
             className={`filter-btn ${selectedFilter === "confirmed" ? "active" : ""}`}
             onClick={() => handleFilterChange("confirmed")}
           >
-            Đã xác nhận
+            ✅ Đã xác nhận
           </button>
           <button
             className={`filter-btn ${selectedFilter === "delivering" ? "active" : ""}`}
             onClick={() => handleFilterChange("delivering")}
           >
-            Đang giao
+            🚚 Đang giao
           </button>
           <button
             className={`filter-btn ${selectedFilter === "delivered" ? "active" : ""}`}
             onClick={() => handleFilterChange("delivered")}
           >
-            Đã giao
+            🎉 Đã giao
           </button>
           <button
             className={`filter-btn ${selectedFilter === "cancelled" ? "active" : ""}`}
             onClick={() => handleFilterChange("cancelled")}
           >
-            Đã hủy
-          </button>
-          <button
-            className={`filter-btn ${selectedFilter === "returned" ? "active" : ""}`}
-            onClick={() => handleFilterChange("returned")}
-          >
-            Đã trả lại
+            ❌ Đã hủy
           </button>
         </div>
       </div>
@@ -281,90 +267,96 @@ const OrderManager = () => {
         <div className="error-message">{error}</div>
       ) : (
         <div className="orders-container">
-          {orders.length === 0 ? (
+          {filteredOrders.length === 0 ? (
             <div className="no-orders">
-              <p>Không có đơn hàng nào</p>
+              <div className="no-orders-icon">📦</div>
+              <h3>Không có đơn hàng nào</h3>
+              <p>
+                {searchTerm 
+                  ? `Không tìm thấy đơn hàng nào với từ khóa "${searchTerm}"`
+                  : "Chưa có đơn hàng nào trong danh sách"
+                }
+              </p>
+              {searchTerm && (
+                <button 
+                  className="clear-search-btn"
+                  onClick={() => setSearchTerm("")}
+                >
+                  Xóa bộ lọc tìm kiếm
+                </button>
+              )}
             </div>
           ) : (
-            <div className="orders-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Mã đơn hàng</th>
-                    <th>Khách hàng</th>
-                    <th>Sản phẩm</th>
-                    <th>Tổng tiền</th>
-                    <th>Phương thức thanh toán</th>
-                    <th>Trạng thái</th>
-                    <th>Ngày tạo</th>
-                    <th>Hành động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr key={order.id}>
-                      <td className="order-id">{order.id}</td>
-                      <td className="customer-info">
-                        <div>
-                          <strong>{order.receiverName || "Chưa cập nhật"}</strong>
-                          <br />
-                          <small>{order.receiverPhone || "Chưa cập nhật"}</small>
-                        </div>
-                      </td>
-                      <td className="order-items">
-                        <div className="items-preview">
-                          {order.items?.slice(0, 2).map((item, index) => (
-                            <div key={index} className="item-preview">
-                              {item.productName} x{item.quantity}
-                            </div>
-                          ))}
-                          {order.items?.length > 2 && (
-                            <div className="more-items">+{order.items.length - 2} sản phẩm khác</div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="order-total">
-                        <strong>{formatCurrency(order.totalAmount)}</strong>
-                      </td>
-                      <td className="payment-method">
-                        {order.paymentMethod ? getPaymentMethodLabel(order.paymentMethod) : "Chưa chọn"}
-                      </td>
-                      <td className="order-status">
-                        {getStatusBadge(order.status)}
-                      </td>
-                      <td className="order-date">
-                        {formatDate(order.createdAt)}
-                      </td>
-                      <td className="order-actions">
-                        <button
-                          className="action-btn view-btn"
-                          onClick={() => handleViewOrder(order.id)}
-                        >
-                          👁️ Xem chi tiết
-                        </button>
-                        {order.status === "PENDING_CONFIRMATION" && (
-                          <button
-                            className="action-btn confirm-btn"
-                            onClick={() => handleConfirmOrder(order.id)}
-                            disabled={confirmingOrder === order.id}
-                          >
-                            {confirmingOrder === order.id ? "⏳ Đang xác nhận..." : "✅ Xác nhận"}
-                          </button>
+            <div className="orders-grid">
+              {filteredOrders.map((order) => (
+                <div key={order.id} className="order-card">
+                  <div className="order-card-header">
+                    <div className="order-id-section">
+                      <span className="order-id">#{order.id}</span>
+                      <span className="order-date">{formatDate(order.createdAt)}</span>
+                    </div>
+                    <div className="order-status">
+                      {getStatusBadge(order.status)}
+                    </div>
+                  </div>
+
+                  <div className="order-card-body">
+                    <div className="customer-section">
+                      <div className="customer-avatar">👤</div>
+                      <div className="customer-info">
+                        <h4>{order.receiverName || "Chưa cập nhật"}</h4>
+                        <p>{order.receiverPhone || "Chưa cập nhật"}</p>
+                      </div>
+                    </div>
+
+                    <div className="order-items-section">
+                      <h5>📦 Sản phẩm ({order.items?.length || 0})</h5>
+                      <div className="items-preview">
+                        {order.items?.slice(0, 3).map((item, index) => (
+                          <div key={index} className="item-preview">
+                            <span className="item-name">{item.productName}</span>
+                            <span className="item-quantity">x{item.quantity}</span>
+                          </div>
+                        ))}
+                        {order.items?.length > 3 && (
+                          <div className="more-items">
+                            +{order.items.length - 3} sản phẩm khác
+                          </div>
                         )}
-                        {(order.status === "CONFIRMED" || order.status === "DELIVERING" || order.status === "DELIVERY_SUCCESSFUL") && 
-                         getValidNextStatuses(order.status).length > 0 && (
-                          <button
-                            className="action-btn update-status-btn"
-                            onClick={() => handleOpenStatusUpdateModal(order)}
-                          >
-                            📦 Cập nhật trạng thái
-                          </button>
-                        )}
-                       </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+
+                    <div className="order-summary">
+                      <div className="summary-row">
+                        <span>Phương thức thanh toán:</span>
+                        <span>{order.paymentMethod ? getPaymentMethodLabel(order.paymentMethod) : "Chưa chọn"}</span>
+                      </div>
+                      <div className="summary-row total-row">
+                        <span>Tổng tiền:</span>
+                        <span className="total-amount">{formatCurrency(order.totalAmount)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="order-card-footer">
+                    <button
+                      className="action-btn view-btn"
+                      onClick={() => handleViewOrder(order.id)}
+                    >
+                      👁️ Chi tiết
+                    </button>
+                    {order.status === "PENDING_CONFIRMATION" && (
+                      <button
+                        className="action-btn confirm-btn"
+                        onClick={() => handleConfirmOrder(order.id)}
+                        disabled={confirmingOrder === order.id}
+                      >
+                        {confirmingOrder === order.id ? "⏳ Đang xác nhận..." : "✅ Xác nhận"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -482,106 +474,6 @@ const OrderManager = () => {
                 onClick={() => setShowOrderDetail(false)}
               >
                 Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Status Update Modal */}
-      {showStatusUpdateModal && selectedOrder && (
-        <div className="modal-overlay">
-          <div className="status-update-modal">
-            <div className="modal-header">
-              <h3>Cập nhật trạng thái đơn hàng #{selectedOrder.id}</h3>
-              <button
-                className="close-btn"
-                onClick={() => {
-                  setShowStatusUpdateModal(false);
-                  setStatusUpdateData({ newStatus: "", description: "" });
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="status-update-content">
-              <div className="current-status">
-                <h4>Trạng thái hiện tại: {getStatusBadge(selectedOrder.status)}</h4>
-                <p>Đơn hàng #{selectedOrder.id}</p>
-              </div>
-              
-              {selectedOrder.status === "DELIVERY_SUCCESSFUL" ? (
-                <div className="return-notice">
-                  <p><strong>⚠️ Lưu ý:</strong> Đơn hàng đã giao thành công. Chỉ chuyển sang "Trả lại" khi khách hàng yêu cầu trả lại hàng hoặc phát hiện lỗi sau khi nhận.</p>
-                </div>
-              ) : selectedOrder.status === "DELIVERING" ? (
-                <div className="return-notice">
-                  <p><strong>⚠️ Lưu ý:</strong> Đơn hàng đang trong quá trình giao. Có thể chuyển sang "Trả lại" nếu khách hàng từ chối nhận hàng hoặc không tìm thấy khách hàng.</p>
-                </div>
-              ) : null}
-              
-              <div className="status-form">
-                <div className="form-group">
-                  <label>Trạng thái mới:</label>
-                  <select
-                    value={statusUpdateData.newStatus}
-                    onChange={(e) => setStatusUpdateData({
-                      ...statusUpdateData,
-                      newStatus: e.target.value
-                    })}
-                    disabled={loadingStatuses}
-                  >
-                    <option value="">Chọn trạng thái mới</option>
-                    {getValidNextStatuses(selectedOrder.status).map((status) => (
-                      <option key={status} value={status}>
-                        {getStatusLabel(status)}
-                      </option>
-                    ))}
-                  </select>
-                  {loadingStatuses && (
-                    <small style={{ color: '#6c757d', fontStyle: 'italic' }}>
-                      Đang tải danh sách trạng thái...
-                    </small>
-                  )}
-                  {!loadingStatuses && getValidNextStatuses(selectedOrder.status).length === 0 && (
-                    <small style={{ color: '#dc3545', fontStyle: 'italic' }}>
-                      Không có trạng thái hợp lệ để chuyển đổi từ trạng thái hiện tại
-                    </small>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label>Ghi chú (tùy chọn):</label>
-                  <textarea
-                    value={statusUpdateData.description}
-                    onChange={(e) => setStatusUpdateData({
-                      ...statusUpdateData,
-                      description: e.target.value
-                    })}
-                    placeholder="Nhập ghi chú về trạng thái..."
-                    rows="3"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button
-                className="update-btn"
-                onClick={() => handleUpdateShippingStatus(selectedOrder.id)}
-                disabled={updatingStatus === selectedOrder.id || !statusUpdateData.newStatus}
-              >
-                {updatingStatus === selectedOrder.id ? "⏳ Đang cập nhật..." : "✅ Cập nhật trạng thái"}
-              </button>
-              <button
-                className="close-btn secondary"
-                onClick={() => {
-                  setShowStatusUpdateModal(false);
-                  setStatusUpdateData({ newStatus: "", description: "" });
-                }}
-              >
-                Hủy
               </button>
             </div>
           </div>
