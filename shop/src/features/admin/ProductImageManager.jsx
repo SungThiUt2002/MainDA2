@@ -335,3 +335,4 @@ const ProductImageManager = ({ productId, onImagesChange, onClose }) => {
 };
 
 export default ProductImageManager;
+

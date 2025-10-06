@@ -24,3 +24,4 @@ public interface CategoryMapper {
     @Mapping(target = "id", ignore = true)
     void updateCategoryFromDto(UpdateCategoryRequest request, @MappingTarget Category category);
 } 
+
