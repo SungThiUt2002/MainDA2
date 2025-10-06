@@ -182,7 +182,7 @@ const RolePermissionManager = () => {
                   </td>
                   <td>
                     <button onClick={() => handleEditRole(role)}>Sửa</button>
-                    <button onClick={() => handleDeleteRole(role.id)} style={{ color: "#fff" }}>Xóa</button>
+                    <button onClick={() => handleDeleteRole(role.id)}>Xóa</button>
                   </td>
                 </tr>
               ))}
@@ -256,7 +256,7 @@ const RolePermissionManager = () => {
                   <td>{perm.description}</td>
                   <td>
                     <button onClick={() => handleEditPermission(perm)}>Sửa</button>
-                    <button onClick={() => handleDeletePermission(perm.id)} style={{ color: "red" }}>Xóa</button>
+                    <button onClick={() => handleDeletePermission(perm.id)}>Xóa</button>
                   </td>
                 </tr>
               ))}

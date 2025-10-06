@@ -208,13 +208,13 @@ const CategoryManager = () => {
                       className="edit-btn"
                       onClick={() => handleOpenModal(category)}
                     >
-                      ✏️ Sửa
+                      Sửa
                     </button>
                     <button 
                       className="delete-btn"
                       onClick={() => handleDelete(category.id)}
                     >
-                      🗑️ Xóa
+                      Xóa
                     </button>
                   </div>
                 </div>

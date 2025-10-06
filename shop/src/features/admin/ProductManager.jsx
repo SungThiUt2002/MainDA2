@@ -407,11 +407,11 @@ const ProductManager = () => {
       {/* Compact Header with Integrated Search */}
       <div className="product-header">
         <div className="header-left">
-          <h2>📦 Quản lý sản phẩm</h2>
+          <h2>Quản lý sản phẩm</h2>
           <div className="search-controls">
             <input
               type="text"
-              placeholder="🔍 Tìm kiếm sản phẩm..."
+              placeholder="Tìm kiếm sản phẩm..."
               className="search"
               value={searchTerm}
               onChange={handleSearch}
@@ -555,11 +555,11 @@ const ProductManager = () => {
                     border: `1px solid ${stockStatus.color}`
                   }}>
                     <span className="status-icon">
-                      {stockStatus.status === 'out-of-stock' && '❌'}
-                      {stockStatus.status === 'low-stock' && '⚠️'}
-                      {stockStatus.status === 'needs-reorder' && '🔄'}
-                      {stockStatus.status === 'in-stock' && '✅'}
-                      {stockStatus.status === 'unknown' && '❓'}
+                      {stockStatus.status === 'out-of-stock' && ''}
+                      {stockStatus.status === 'low-stock' && ''}
+                      {stockStatus.status === 'needs-reorder' && ''}
+                      {stockStatus.status === 'in-stock' && ''}
+                      {stockStatus.status === 'unknown' && ''}
                     </span>
                     <span className="status-text">{stockStatus.text}</span>
                   </div>
@@ -569,7 +569,7 @@ const ProductManager = () => {
                     className="action-btn edit"
                     onClick={() => handleEditProduct(product)}
                   >
-                    ✏️ Sửa
+                    Sửa
                     </button>
                   <button
                     className="action-btn images"
@@ -578,13 +578,13 @@ const ProductManager = () => {
                       setShowImageModal(true);
                     }}
                   >
-                    🖼️ Ảnh
+                    Ảnh
                     </button>
                   <button
                     className="action-btn delete"
                     onClick={() => handleDeleteProduct(product.id)}
                   >
-                    🗑️ Xóa
+                    Xóa
                     </button>
                 </td>
                 </tr>

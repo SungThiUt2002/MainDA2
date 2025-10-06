@@ -205,13 +205,13 @@ const BrandManager = () => {
                       className="edit-btn"
                       onClick={() => handleOpenModal(brand)}
                     >
-                      ✏️ Sửa
+                      Sửa
                     </button>
                     <button 
                       className="delete-btn"
                       onClick={() => handleDelete(brand.id)}
                     >
-                      🗑️ Xóa
+                      Xóa
                     </button>
                   </div>
                 </td>

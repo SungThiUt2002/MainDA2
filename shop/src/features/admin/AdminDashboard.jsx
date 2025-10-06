@@ -73,8 +73,6 @@ const AdminDashboard = () => {
     setStatsLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
-      console.log("🔄 Token trong loadStats:", token ? "Có token" : "Không có token");
-      console.log("🔄 Token value:", token);
       
       // Lấy số lượng người dùng thực tế
       const usersResponse = await getAllUsers(token);
@@ -86,7 +84,6 @@ const AdminDashboard = () => {
       
       // Lấy số lượng đơn hàng thực tế
       const ordersResponse = await getTotalOrderCount(token);
-      console.log("🔄 Orders response trong AdminDashboard:", ordersResponse);
       
       // Kiểm tra cấu trúc response và lấy số đếm
       let orderCount = 0;
@@ -101,12 +98,9 @@ const AdminDashboard = () => {
         } else if (ordersResponse.total !== undefined) {
           orderCount = ordersResponse.total;
         } else {
-          console.warn("⚠️ Không thể xác định cấu trúc response:", ordersResponse);
           orderCount = 0;
         }
       }
-      
-      console.log("✅ Order count được xử lý:", orderCount);
       
       setStats({
         users: userCount,
@@ -114,7 +108,6 @@ const AdminDashboard = () => {
         orders: orderCount,
       });
     } catch (error) {
-      console.error("Lỗi khi tải thống kê:", error);
       // Fallback về mock data nếu có lỗi
       setStats({
         users: 0,
@@ -220,7 +213,6 @@ const AdminDashboard = () => {
         needsReorder: needsReorder,
       });
     } catch (error) {
-      console.error("Lỗi khi tải thống kê tồn kho:", error);
       // Fallback về mock data nếu có lỗi
       setInventoryStats({
         totalProducts: 0,
@@ -281,7 +273,7 @@ const AdminDashboard = () => {
 
       {/* Inventory Overview */}
       <div className="inventory-overview">
-        <h3>📊 Tổng quan tồn kho</h3>
+        <h3>📊 Tổng quan kho</h3>
         <div className="inventory-stats">
           <div className="inventory-stat-card">
             <div className="inventory-stat-icon">✅</div>
@@ -318,19 +310,6 @@ const AdminDashboard = () => {
               <span className="inventory-stat-desc">Cần đặt hàng</span>
             </div>
           </div>
-
-          <div className="inventory-stat-card">
-            <div className="inventory-stat-icon">📈</div>
-            <div className="inventory-stat-info">
-              <h4>Tỷ lệ tồn kho</h4>
-              <p className="inventory-stat-number">
-                {inventoryStats.totalProducts > 0 
-                  ? Math.round((inventoryStats.inStock / inventoryStats.totalProducts) * 100)
-                  : 0}%
-              </p>
-              <span className="inventory-stat-desc">Sản phẩm có sẵn</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -350,16 +329,10 @@ const AdminDashboard = () => {
             onClick={() => setActiveTab("inventory")}
             className="action-btn"
           >
-            📊 Quản lý tồn kho
+            📊 Quản lý kho
           </button>
           <button onClick={() => setActiveTab("orders")} className="action-btn">
             🛒 Xem đơn hàng
-          </button>
-          <button
-            onClick={() => setActiveTab("analytics")}
-            className="action-btn"
-          >
-            📊 Báo cáo chi tiết
           </button>
         </div>
       </div>
@@ -498,27 +471,6 @@ const AdminDashboard = () => {
 
   const renderOrders = () => <OrderManager />;
 
-  const renderAnalytics = () => (
-    <div className="tab-content">
-      <div className="tab-header">
-        <h2>📊 Báo cáo & Thống kê</h2>
-      </div>
-      <div className="content-placeholder">
-        <p>Chức năng báo cáo và thống kê sẽ được phát triển...</p>
-      </div>
-    </div>
-  );
-
-  const renderSettings = () => (
-    <div className="tab-content">
-      <div className="tab-header">
-        <h2>⚙️ Cài đặt hệ thống</h2>
-      </div>
-      <div className="content-placeholder">
-        <p>Chức năng cài đặt hệ thống sẽ được phát triển...</p>
-      </div>
-    </div>
-  );
 
   const renderContent = () => {
     switch (activeTab) {
@@ -536,10 +488,6 @@ const AdminDashboard = () => {
         return <InventoryDashboard />
       case "orders":
         return renderOrders();
-      case "analytics":
-        return renderAnalytics();
-      case "settings":
-        return renderSettings();
       case "roles":
         return <RolePermissionManager />;
       default:
@@ -624,7 +572,7 @@ const AdminDashboard = () => {
                   className="action-btn tertiary"
                   onClick={() => setActiveTab("inventory")}
                 >
-                  📊 Quản lý tồn kho
+                  📊 Quản lý kho
                 </button>
                 <button className="action-btn tertiary">
                   📈 Báo cáo bán hàng
@@ -757,7 +705,7 @@ const AdminDashboard = () => {
                   }`}
                   onClick={() => setActiveTab("inventory")}
                 >
-                  📊 Tồn kho
+                  📊 Quản lý kho
                 </button>
               </li>
               <li>
@@ -770,30 +718,9 @@ const AdminDashboard = () => {
                   🛒 Đơn hàng
                 </button>
               </li>
-              <li>
-                <button
-                  className={`nav-item ${
-                    activeTab === "analytics" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTab("analytics")}
-                >
-                  📈 Thống kê
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`nav-item ${
-                    activeTab === "settings" ? "active" : ""
-                  }`}
-                  onClick={() => setActiveTab("settings")}
-                >
-                  ⚙️ Cài đặt
-                </button>
-              </li>
             </ul>
           </nav>
         </aside>
-
         <main className="admin-content">{renderContent()}</main>
       </div>
     </div>
