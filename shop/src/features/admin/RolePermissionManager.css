@@ -22,7 +22,7 @@
   border: 1px solid #d1d5db;
   border-radius: 4px;
   background: #fff;
-  color: #374151;
+  color: #4046c0;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -35,9 +35,9 @@
 }
 
 .tab-header button.active {
-  background: #374151;
+  background: #667eea;
   color: #fff;
-  border-color: #374151;
+  border-color: #667eea;
 }
 
 /* Section Headers */
@@ -110,14 +110,14 @@
 
 .role-table button:first-child,
 .permission-table button:first-child {
-  color: #374151;
-  border-color: #d1d5db;
+  color: #667eea;
+  border-color: #c7d2fe;
 }
 
 .role-table button:first-child:hover,
 .permission-table button:first-child:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
+  background: #eef2ff;
+  border-color: #a5b4fc;
 }
 
 .role-table button:last-child,
@@ -155,8 +155,8 @@
 
 .role-form input:focus, .permission-form input:focus {
   outline: none;
-  border-color: #6b7280;
-  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
 /* Permission Checkboxes */
@@ -186,8 +186,8 @@
 }
 
 .role-form label:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
+  background: #eef2ff;
+  border-color: #c7d2fe;
 }
 
 .role-form label input[type="checkbox"] {
@@ -197,7 +197,7 @@
 }
 
 .role-form label input[type="checkbox"]:checked + span {
-  color: #374151;
+  color: #667eea;
   font-weight: 500;
 }
 
@@ -217,15 +217,15 @@
 
 .role-form button[type="submit"],
 .permission-form button[type="submit"] {
-  background: #374151;
+  background: #667eea;
   color: #fff;
-  border-color: #374151;
+  border-color: #667eea;
 }
 
 .role-form button[type="submit"]:hover,
 .permission-form button[type="submit"]:hover {
-  background: #1f2937;
-  border-color: #1f2937;
+  background: #5a67d8;
+  border-color: #5a67d8;
 }
 
 .role-form button[type="button"],
