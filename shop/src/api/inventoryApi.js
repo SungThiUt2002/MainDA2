@@ -90,17 +90,13 @@ export const getAllInventoryItems = async () => {
 };
 
 // Lấy danh sách sản phẩm có sẵn
-  }
-};
-
-// Lấy danh sách sản phẩm có sẵn
 export const getAvailableInventoryItems = async () => {
   try {
     const response = await inventoryApi.get('/available');
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm có sẵn:', error);
-// Lấy danh sách sản phẩm sắp hết hàng
+    throw error;
   }
 };
 
@@ -111,7 +107,7 @@ export const getLowStockItems = async () => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm sắp hết hàng:', error);
-// Lấy danh sách sản phẩm cần đặt hàng lại
+    throw error;
   }
 };
 
@@ -122,7 +118,7 @@ export const getItemsNeedingReorder = async () => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm cần đặt hàng:', error);
-// Nhập kho cho sản phẩm
+    throw error;
   }
 };
 
