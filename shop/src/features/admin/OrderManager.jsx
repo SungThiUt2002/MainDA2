@@ -369,7 +369,7 @@ const OrderManager = () => {
                             onClick={() => handleViewOrder(order.id)}
                             title="Xem chi tiết đơn hàng"
                           >
-                            👁️
+                            Xem chi tiết
                           </button>
                           {order.status === "PENDING_CONFIRMATION" && (
                             <button
