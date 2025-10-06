@@ -43,21 +43,53 @@ export const getSoldQuantity = async (productId) => {
 // Lấy tất cả thông tin tồn kho
 export const getAllInventoryItems = async () => {
   try {
-    // Gọi trực tiếp API inventory service để lấy dữ liệu mới nhất
-    console.log('🔄 Lấy danh sách inventory từ inventory service...');
+    // Thử lấy từ inventory service trước
     const response = await inventoryApi.get('/all');
-    console.log('📦 Inventory service response:', response);
-    
-    const inventoryItems = response.data || response;
-    console.log('📦 Inventory data:', inventoryItems);
-    console.log('📦 Inventory count:', inventoryItems.length);
-    
-    return inventoryItems;
-    
+    console.log('Inventory API response:', response);
+    return response;
   } catch (error) {
-    console.error('❌ Lỗi khi lấy inventory từ inventory service:', error);
-    console.log('❌ Không thể lấy dữ liệu inventory');
-    return { data: [] };
+    console.error('Lỗi khi lấy danh sách tồn kho:', error);
+    console.error('Error details:', error.response?.data);
+    
+    // Fallback: Lấy danh sách sản phẩm thật từ product service
+    try {
+      console.log('🔄 Fallback: Lấy danh sách sản phẩm từ product service...');
+      const productsResponse = await getAllProducts();
+      const products = productsResponse.data || productsResponse;
+      
+      // Chuyển đổi dữ liệu sản phẩm thành format inventory
+      const inventoryItems = products.map((product, index) => ({
+        id: product.id || index + 1,
+        productId: product.id,
+        productName: product.name || product.productName,
+        totalQuantity: product.stock || 0,
+        availableQuantity: product.stock || 0,
+        soldQuantity: 0,
+        lockedQuantity: 0,
+        lowStockThreshold: 10,
+        reorderPoint: 5,
+        isAvailable: true,
+        isActive: true,
+        isLowStock: (product.stock || 0) <= 10,
+        isOutOfStock: (product.stock || 0) === 0,
+        needsReorder: (product.stock || 0) <= 5,
+        lastSaleDate: new Date().toISOString(),
+        createdAt: product.createdAt || new Date().toISOString(),
+        updatedAt: product.updatedAt || new Date().toISOString()
+      }));
+      
+      console.log('✅ Đã lấy được', inventoryItems.length, 'sản phẩm thật từ product service');
+      return { data: inventoryItems };
+      
+    } catch (productError) {
+      console.error('❌ Lỗi khi lấy sản phẩm từ product service:', productError);
+      console.log('❌ Không thể lấy dữ liệu sản phẩm');
+      return { data: [] };
+    }
+  }
+};
+
+// Lấy danh sách sản phẩm có sẵn
   }
 };
 
@@ -68,7 +100,7 @@ export const getAvailableInventoryItems = async () => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm có sẵn:', error);
-    throw error;
+// Lấy danh sách sản phẩm sắp hết hàng
   }
 };
 
@@ -79,7 +111,7 @@ export const getLowStockItems = async () => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm sắp hết hàng:', error);
-    throw error;
+// Lấy danh sách sản phẩm cần đặt hàng lại
   }
 };
 
@@ -90,7 +122,7 @@ export const getItemsNeedingReorder = async () => {
     return response;
   } catch (error) {
     console.error('Lỗi khi lấy danh sách sản phẩm cần đặt hàng:', error);
-    throw error;
+// Nhập kho cho sản phẩm
   }
 };
 
@@ -99,8 +131,6 @@ export const importStock = async (productId, stockData, token) => {
   try {
     console.log('Importing stock with data:', { productId, stockData, token: token ? 'Bearer ***' : 'No token' });
     
-    // Gọi API inventory service để nhập kho
-    console.log('🔄 Gọi API inventory service để nhập kho...');
     const response = await inventoryApi.post(`/${productId}`, stockData, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -108,7 +138,7 @@ export const importStock = async (productId, stockData, token) => {
       },
     });
     
-    console.log('✅ Đã nhập kho thành công:', response);
+    console.log('Import stock response:', response);
     return response;
   } catch (error) {
     console.error('Lỗi khi nhập kho:', error);
