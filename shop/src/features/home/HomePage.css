@@ -52,7 +52,7 @@
 
 /* Hero Section - Điều chỉnh để phù hợp với search section cố định */
 .hero {
-  padding: 200px 0 80px; /* Tăng padding-top để tránh bị che bởi search section */
+  padding: 1% 0; /* Tăng padding-top để tránh bị che bởi search section */
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   min-height: 80vh;
