@@ -29,36 +29,31 @@ const InventoryDashboard = () => {
     fetchInventoryData();
   }, []);
 
-
   const fetchInventoryData = async () => {
     try {
       setLoading(true);
-      
       const [lowStockRes, reorderRes, allItemsRes] = await Promise.all([
         getLowStockItems(),
         getItemsNeedingReorder(),
         getAllInventoryItems(),
       ]);
 
-      const lowStockData = lowStockRes.data || [];
-      const reorderData = reorderRes.data || [];
-      const allItemsData = allItemsRes.data || [];
+      setLowStockItems(lowStockRes.data || []);
+      setNeedingReorderItems(reorderRes.data || []);
+      setAllInventoryItems(allItemsRes.data || []);
 
-      setLowStockItems(lowStockData);
-      setNeedingReorderItems(reorderData);
-      setAllInventoryItems(allItemsData);
-      
       // Debug logging
       console.log('📦 Inventory data loaded:');
-      console.log('- All items count:', allItemsData.length);
-      console.log('- All items data:', allItemsData);
+      console.log('- Low stock items:', lowStockRes.data?.length || 0);
+      console.log('- Reorder items:', reorderRes.data?.length || 0);
+      console.log('- All items:', allItemsRes.data?.length || 0);
+      console.log('- All items data:', allItemsRes.data);
 
       // Tính toán thống kê
       const totalItems = allItemsRes.data?.length || 0;
-      const items = allItemsRes.data || [];
-      const outOfStock = items.filter(item => item.isOutOfStock).length;
-      const lowStock = items.filter(item => item.isLowStock).length;
-      const inStock = items.filter(item => !item.isOutOfStock && !item.isLowStock).length;
+      const outOfStock = allItemsRes.data.filter(item => item.isOutOfStock).length;
+      const lowStock = allItemsRes.data.filter(item => item.isLowStock).length;
+      const inStock = allItemsRes.data.filter(item => !item.isOutOfStock && !item.isLowStock).length;
 
       setStats({
         totalItems,
@@ -69,11 +64,6 @@ const InventoryDashboard = () => {
       });
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu tồn kho:", error);
-      
-      // Set empty arrays on error
-      setLowStockItems([]);
-      setNeedingReorderItems([]);
-      setAllInventoryItems([]);
     } finally {
       setLoading(false);
     }
@@ -182,9 +172,7 @@ const InventoryDashboard = () => {
 
   const handleProductSelect = (e) => {
     const selectedProductId = e.target.value;
-    console.log('🔍 Selected productId:', selectedProductId, 'Type:', typeof selectedProductId);
     const selectedProduct = allInventoryItems.find(item => item.productId.toString() === selectedProductId);
-    console.log('🔍 Selected product:', selectedProduct);
     
     setImportForm(prev => ({
       ...prev,
@@ -250,10 +238,8 @@ const InventoryDashboard = () => {
         <div className="header-actions">
           <button className="import-btn" onClick={() => {
             console.log('🔍 Opening import modal...');
-            console.log('📦 Current state:');
-            console.log('- allInventoryItems.length:', allInventoryItems.length);
-            console.log('- allInventoryItems:', allInventoryItems);
-            console.log('- loading state:', loading);
+            console.log('📦 Available products:', allInventoryItems.length);
+            console.log('📦 Products data:', allInventoryItems);
             setShowImportModal(true);
           }}>
             📥 Nhập kho
@@ -269,7 +255,7 @@ const InventoryDashboard = () => {
         <div className="modal-overlay">
           <div className="import-modal">
             <div className="modal-header">
-                <h3>📥 Nhập kho</h3>
+              <h3>📥 Nhập kho</h3>
               <button 
                 className="close-btn" 
                 onClick={() => {
@@ -300,13 +286,9 @@ const InventoryDashboard = () => {
                         {item.productName} (ID: {item.productId}) - Còn: {item.availableQuantity}
                       </option>
                     ))
-                  ) : loading ? (
-                    <option value="" disabled>
-                      🔄 Đang tải danh sách sản phẩm...
-                    </option>
                   ) : (
                     <option value="" disabled>
-                      ❌ Không có sản phẩm nào
+                      🔄 Đang tải danh sách sản phẩm...
                     </option>
                   )}
                 </select>
