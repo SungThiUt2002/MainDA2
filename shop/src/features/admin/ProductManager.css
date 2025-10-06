@@ -1357,12 +1357,12 @@
 
 .product-manager .product-form-modal,
 .product-form-modal {
-  max-width: 700px !important;
+  max-width: 500px !important;
   width: 90% !important;
   max-height: 80vh !important;
   overflow-y: auto !important;
   background: white !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
   animation: fadeIn 0.3s !important;
   padding: 0 !important;
@@ -1423,12 +1423,12 @@
   bottom: 0 !important;
   transform: none !important;
   display: block !important;
-  max-width: 900px !important;
-  width: 95% !important;
-  max-height: 95vh !important;
+  max-width: 500px !important;
+  width: 90% !important;
+  max-height: 80vh !important;
   overflow-y: auto !important;
   background: white !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
   animation: fadeIn 0.3s !important;
   padding: 0 !important;
@@ -1443,8 +1443,8 @@
   background: #f8fafc;
   color: #1e293b;
   border-radius: 8px 8px 0 0;
-  padding: 1rem;
-  margin: 0 0 1rem 0;
+  padding: 20px 20px 16px 20px;
+  margin: 0 0 0 0;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: center;
@@ -1513,8 +1513,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 0 1rem 1rem 1rem;
-  max-height: calc(95vh - 120px);
+  padding: 20px 20px 20px 20px;
+  max-height: calc(80vh - 120px);
   overflow-y: auto;
 }
 

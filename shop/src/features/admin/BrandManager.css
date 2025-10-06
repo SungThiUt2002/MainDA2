@@ -247,6 +247,7 @@
 .brand-name {
   font-weight: 600;
   color: #1e293b;
+  font-size: 14px;
 }
 
 .brand-description {
@@ -281,7 +282,7 @@
 .status-badge {
   padding: 6px 12px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -307,7 +308,7 @@
   padding: 0.25rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -404,9 +405,9 @@
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 20px 20px 0 20px !important;
+  padding: 20px 20px 16px 20px !important;
   border-bottom: 1px solid #e2e8f0 !important;
-  margin-bottom: 20px !important;
+  margin-bottom: 0 !important;
 }
 
 .modal-header h3 {
@@ -439,7 +440,7 @@
 
 /* Form */
 .brand-form {
-  padding: 0 20px 20px 20px;
+  padding: 20px 20px 20px 20px;
 }
 
 .form-group {
@@ -597,7 +598,7 @@
 
   .edit-btn, .delete-btn {
     padding: 6px 8px;
-    font-size: 11px;
+    font-size: 14px;
   }
 }
 

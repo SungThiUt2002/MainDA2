@@ -243,7 +243,6 @@ const AdminDashboard = () => {
               <h3>Tổng người dùng</h3>
               <p className="stat-number">{stats.users.toLocaleString()}</p>
               <span className="stat-change positive">
-                Dữ liệu thực tế từ hệ thống
               </span>
             </div>
           </div>
@@ -253,7 +252,7 @@ const AdminDashboard = () => {
           <div className="stat-info">
             <h3>Sản phẩm</h3>
             <p className="stat-number">{stats.products.toLocaleString()}</p>
-            <span className="stat-change positive">Dữ liệu thực tế từ hệ thống</span>
+            <span className="stat-change positive"></span>
           </div>
         </div>
 
@@ -263,7 +262,6 @@ const AdminDashboard = () => {
             <h3>Đơn hàng</h3>
             <p className="stat-number">{stats.orders.toLocaleString()}</p>
             <span className="stat-change positive">
-              Dữ liệu thực tế từ hệ thống
             </span>
           </div>
         </div>
